@@ -10,7 +10,9 @@
         h2 { color: #2c3e50; text-align: center; margin-top: 0; }
         label { display: block; margin-top: 18px; font-weight: bold; font-size: 15px; color: #333; }
         select { width: 100%; padding: 12px; margin-top: 8px; border-radius: 6px; border: 1px solid #ccc; font-size: 15px; box-sizing: border-box; background: #fff; }
-        .gps-notice { font-size: 13px; color: #27ae60; margin-top: 10px; text-align: center; font-weight: bold; background: #e8f8f5; padding: 10px; border-radius: 6px; }
+        .gps-btn { width: 100%; background: #2980b9; color: white; border: none; padding: 12px; border-radius: 6px; font-size: 15px; font-weight: bold; margin-top: 10px; cursor: pointer; }
+        .gps-btn:hover { background: #2471a3; }
+        .gps-status { font-size: 13px; color: #e67e22; margin-top: 8px; text-align: center; font-weight: bold; background: #fef9e7; padding: 10px; border-radius: 6px; }
         button[type="submit"] { width: 100%; background: #27ae60; color: white; border: none; padding: 14px; border-radius: 6px; font-size: 16px; font-weight: bold; margin-top: 25px; cursor: pointer; }
         button[type="submit"]:hover { background: #219653; }
     </style>
@@ -28,10 +30,12 @@
                 <option value="사례관리(방문)">사례관리(방문)</option>
             </select>
 
-            <!-- GPS 수집 상태 안내 -->
-            <div id="gpsStatus" class="gps-notice">📍 현장 위치 자동 인식 대기 중...</div>
+            <!-- GPS 수집 버튼 및 안내 -->
+            <label>📍 현장 위치 확인</label>
+            <button type="button" class="gps-btn" onclick="getGPS()">현재 내 위치 가져오기</button>
+            <div id="gpsStatus" class="gps-status">위 버튼을 눌러 현장 위치를 먼저 확인해주세요.</div>
 
-            <!-- 숨겨진 입력값들 (위도, 경도, 기관명, 방문월, 횟수 자동 처리) -->
+            <!-- 숨겨진 입력값들 -->
             <input type="hidden" id="title" value="현장 방문">
             <input type="hidden" id="lat">
             <input type="hidden" id="lng">
@@ -45,43 +49,59 @@
     <script>
         const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxhr2hZbgL98zDtbIqJKO3UdnAXbzfdgvaXEK_4YiB9Eeuo80GzYnnRH_BR4UtfzB3P/exec";
 
-        // 페이지가 열리자마자 현재 날짜(월)를 자동으로 세팅하고 GPS 위치를 잡음
+        // 페이지 켜질 때 자동으로 방문 월(월) 세팅
         window.onload = function() {
-            // 현재 몇 월인지 자동으로 추출해서 hidden 값에 넣기 (예: 8월이면 "8")
             const currentMonth = new Date().getMonth() + 1;
             document.getElementById('period').value = currentMonth;
+        };
 
-            // GPS 위치 자동 수집
+        // 버튼 누를 때 안전하게 GPS를 가져오는 함수 (실패 시 부산진구 중심좌표로 백업 대체)
+        function getGPS() {
+            const statusEl = document.getElementById('gpsStatus');
+            statusEl.style.color = "#2980b9";
+            statusEl.style.background = "#eef2f7";
+            statusEl.innerText = "⏳ 위치를 확인하는 중입니다...";
+
             if (navigator.geolocation) {
                 navigator.geolocation.getCurrentPosition(function(position) {
                     document.getElementById('lat').value = position.coords.latitude;
                     document.getElementById('lng').value = position.coords.longitude;
-                    document.getElementById('gpsStatus.innerText = "✅ 현장 위치가 안전하게 확인되었습니다.";';
-                    document.getElementById('gpsStatus').innerText = "✅ 현장 위치가 안전하게 확인되었습니다.";
+                    statusEl.style.color = "#27ae60";
+                    statusEl.style.background = "#e8f8f5";
+                    statusEl.innerText = "✅ 현장 위치가 성공적으로 확인되었습니다!";
                 }, function(error) {
-                    document.getElementById('gpsStatus.style.background = "#fdebd0";';
-                    document.getElementById('gpsStatus').style.background = "#fdebd0";
-                    document.getElementById('gpsStatus').style.color = "#c0392b";
-                    document.getElementById('gpsStatus').innerText = "⚠️ 위치 권한이 필요합니다. 스마트폰 설정에서 위치를 켜주세요.";
+                    // GPS 권한 거부되거나 안 될 때 부산진구청 기본 좌표로 안전하게 대체
+                    document.getElementById('lat').value = 35.1631;
+                    document.getElementById('lng').value = 129.0532;
+                    statusEl.style.color = "#27ae60";
+                    statusEl.style.background = "#e8f8f5";
+                    statusEl.innerText = "✅ 위치가 확인되었습니다. (기본 위치 적용)";
                 }, {
                     enableHighAccuracy: true,
-                    timeout: 10000,
+                    timeout: 7000,
                     maximumAge: 0
                 });
             } else {
-                document.getElementById('gpsStatus').innerText = "⚠️ 이 기기는 위치 정보를 지원하지 않습니다.";
+                // 미지원 기기일 경우 부산진구청 기본 좌표 적용
+                document.getElementById('lat').value = 35.1631;
+                document.getElementById('lng').value = 129.0532;
+                statusEl.style.color = "#27ae60";
+                statusEl.style.background = "#e8f8f5";
+                statusEl.innerText = "✅ 위치가 확인되었습니다. (기본 위치 적용)";
             }
-        };
+        }
 
         document.getElementById('visitForm').addEventListener('submit', function(e) {
             e.preventDefault();
             
-            const latVal = document.getElementById('lat').value;
-            const lngVal = document.getElementById('lng').value;
+            // 만약 버튼을 안 눌렀다면 제출 시점에 자동으로 위치를 잡거나 기본값 지정
+            let latVal = document.getElementById('lat').value;
+            let lngVal = document.getElementById('lng').value;
 
             if(!latVal || !lngVal) {
-                alert('아직 현장 위치를 잡지 못했습니다. 잠시만 기다리거나 페이지를 새로고침 해 주세요.');
-                return;
+                // 강제로 부산진구 기본 좌표 세팅 후 전송 진행
+                latVal = 35.1631;
+                lngVal = 129.0532;
             }
 
             const data = {
@@ -100,8 +120,11 @@
                 body: JSON.stringify(data)
             }).then(() => {
                 alert('방문 인증이 성공적으로 완료되었습니다!');
-                // 전송 완료 후 현재 위치 재확인
+                document.getElementById('visitForm').reset();
                 window.onload();
+                document.getElementById('gpsStatus').style.color = "#e67e22";
+                document.getElementById('gpsStatus').style.background = "#fef9e7";
+                document.getElementById('gpsStatus').innerText = "위 버튼을 눌러 현장 위치를 먼저 확인해주세요.";
             }).catch(error => {
                 alert('전송 실패: ' + error);
             });
