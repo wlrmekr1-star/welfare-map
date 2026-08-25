@@ -7,85 +7,21 @@
     <!-- 카카오맵 API 스크립트 -->
     <script type="text/javascript" src="https://dapi.kakao.com/v2/maps/sdk.js?appkey=9821f83fe3895fe4e030aee5107a8990&libraries=services"></script>
     <style>
-        body {
-            font-family: 'Malgun Gothic', sans-serif;
-            margin: 0;
-            padding: 0;
-            display: flex;
-            height: 100vh;
-            background: #f0f2f5;
-        }
-        #sidebar {
-            width: 360px;
-            background: #ffffff;
-            box-shadow: 2px 0 10px rgba(0,0,0,0.1);
-            padding: 20px;
-            box-sizing: border-box;
-            display: flex;
-            flex-direction: column;
-            z-index: 10;
-            overflow-y: auto;
-        }
+        body { font-family: 'Malgun Gothic', sans-serif; margin: 0; padding: 0; display: flex; height: 100vh; background: #f0f2f5; }
+        #sidebar { width: 360px; background: #ffffff; box-shadow: 2px 0 10px rgba(0,0,0,0.1); padding: 20px; box-sizing: border-box; display: flex; flex-direction: column; z-index: 10; overflow-y: auto; }
         h2 { font-size: 20px; color: #2c3e50; margin-top: 0; }
-        .stats-box {
-            background: #eef2f7;
-            padding: 12px 15px;
-            border-radius: 8px;
-            margin-bottom: 12px;
-        }
+        .stats-box { background: #eef2f7; padding: 12px 15px; border-radius: 8px; margin-bottom: 12px; }
         .stats-box h3 { margin: 0 0 6px 0; font-size: 13px; color: #555; }
         .stats-box p { margin: 0; font-size: 16px; font-weight: bold; color: #2980b9; }
-        
-        .filter-section {
-            background: #fdfefe;
-            border: 1px solid #dcdde1;
-            padding: 12px;
-            border-radius: 8px;
-            margin-bottom: 12px;
-        }
+        .filter-section { background: #fdfefe; border: 1px solid #dcdde1; padding: 12px; border-radius: 8px; margin-bottom: 12px; }
         .filter-section h4 { margin: 0 0 6px 0; font-size: 13px; color: #2c3e50; }
-        .filter-section select {
-            width: 100%;
-            padding: 8px;
-            border-radius: 6px;
-            border: 1px solid #bdc3c7;
-            font-size: 13px;
-            box-sizing: border-box;
-        }
-
-        .legend-box {
-            background: #fff;
-            border: 1px solid #ddd;
-            padding: 12px;
-            border-radius: 8px;
-            margin-bottom: 12px;
-        }
+        .filter-section select { width: 100%; padding: 8px; border-radius: 6px; border: 1px solid #bdc3c7; font-size: 13px; box-sizing: border-box; }
+        .legend-box { background: #fff; border: 1px solid #ddd; padding: 12px; border-radius: 8px; margin-bottom: 12px; }
         .legend-box h4 { margin: 0 0 8px 0; font-size: 13px; color: #333; }
-        .legend-item {
-            display: flex;
-            align-items: center;
-            font-size: 12px;
-            margin-bottom: 6px;
-            color: #555;
-        }
-        .color-dot {
-            width: 14px;
-            height: 14px;
-            border-radius: 50%;
-            display: inline-block;
-            margin-right: 8px;
-        }
-
-        #map {
-            flex-grow: 1;
-            height: 100%;
-        }
-        .info-desc {
-            font-size: 12px;
-            color: #666;
-            margin-top: auto;
-            line-height: 1.4;
-        }
+        .legend-item { display: flex; align-items: center; font-size: 12px; margin-bottom: 6px; color: #555; }
+        .color-dot { width: 14px; height: 14px; border-radius: 50%; display: inline-block; margin-right: 8px; }
+        #map { flex-grow: 1; height: 100%; }
+        .info-desc { font-size: 12px; color: #666; margin-top: auto; line-height: 1.4; }
     </style>
 </head>
 <body>
@@ -128,29 +64,20 @@
 
         <div class="legend-box">
             <h4>🗺️ 방문 횟수별 구역 색상</h4>
-            <div class="legend-item">
-                <span class="color-dot" style="background: #c0392b;"></span>
-                <span><b>50회 이상</b> (초집중 관리 지역)</span>
-            </div>
-            <div class="legend-item">
-                <span class="color-dot" style="background: #e67e22;"></span>
-                <span><b>10회 ~ 30회</b> (중점 방문 지역)</span>
-            </div>
-            <div class="legend-item">
-                <span class="color-dot" style="background: #3498db;"></span>
-                <span><b>1회 ~ 10회</b> (기본 방문 / 관심 지역)</span>
-            </div>
+            <div class="legend-item"><span class="color-dot" style="background: #c0392b;"></span><span><b>50회 이상</b> (초집중 관리 지역)</span></div>
+            <div class="legend-item"><span class="color-dot" style="background: #e67e22;"></span><span><b>10회 ~ 30회</b> (중점 방문 지역)</span></div>
+            <div class="legend-item"><span class="color-dot" style="background: #3498db;"></span><span><b>1회 ~ 10회</b> (기본 방문 / 관심 지역)</span></div>
         </div>
 
         <div class="info-desc">
-            💡 <b>안내:</b> 순수 카카오맵과 부산진구 분석 대시보드가 연동된 화면입니다.
+            💡 <b>안내:</b> 구글 시트와 연동되어 스마트폰 인증 데이터가 실시간 표시됩니다.
         </div>
     </div>
 
     <div id="map"></div>
 
     <script>
-        // 카카오맵 초기화
+        // 1. 카카오맵 초기화
         var container = document.getElementById('map');
         var options = {
             center: new kakao.maps.LatLng(35.1631, 129.0532), 
@@ -160,7 +87,7 @@
         };
         var map = new kakao.maps.Map(container, options);
 
-        // 부산진구 실제 다각형 경계선
+        // 부산진구 경계선
         var busanjinPath = [
             new kakao.maps.LatLng(35.1850, 129.0350),
             new kakao.maps.LatLng(35.1880, 129.0600),
@@ -170,55 +97,45 @@
             new kakao.maps.LatLng(35.1380, 129.0400),
             new kakao.maps.LatLng(35.1520, 129.0150)
         ];
-
         var busanjinPolygon = new kakao.maps.Polygon({
             path: busanjinPath,
             strokeWeight: 3,
             strokeColor: '#27ae60',
             strokeOpacity: 0.8,
-            strokeStyle: 'solid',
             fillColor: '#27ae60',
             fillOpacity: 0.06
         });
         busanjinPolygon.setMap(map);
 
-        var allVisitData = [];
-        var activeCircles = [];
+        let allVisitData = [];
+        let activeCircles = [];
 
         function clearMap() {
-            activeCircles.forEach(function(c) { c.setMap(null); });
+            activeCircles.forEach(c => c.setMap(null));
             activeCircles = [];
         }
 
         function filterData() {
             clearMap();
-
             var selectedPeriod = document.getElementById('periodFilter').value;
             var selectedPurpose = document.getElementById('purposeFilter').value;
 
-            var filtered = allVisitData.filter(function(item) {
-                var matchPeriod = (item.period === selectedPeriod);
+            var filtered = allVisitData.filter(item => {
+                var matchPeriod = (selectedPeriod === 'year' || item.period == selectedPeriod);
                 var matchPurpose = (selectedPurpose === 'all' || item.purpose === selectedPurpose);
                 return matchPeriod && matchPurpose;
             });
 
-            var totalSum = filtered.reduce(function(sum, item) { return sum + item.count; }, 0);
+            var totalSum = filtered.reduce((sum, item) => sum + Number(item.count), 0);
             document.getElementById('totalCount').innerText = totalSum + " 건 (부산진구 전체)";
 
-            filtered.forEach(function(item) {
+            filtered.forEach(item => {
                 var position = new kakao.maps.LatLng(item.lat, item.lng);
-
+                var cnt = Number(item.count);
                 var radiusSize, circleColor;
-                if (item.count >= 50) {
-                    radiusSize = 220;
-                    circleColor = '#c0392b';
-                } else if (item.count >= 10) {
-                    radiusSize = 160;
-                    circleColor = '#e67e22';
-                } else {
-                    radiusSize = 110;
-                    circleColor = '#3498db';
-                }
+                if (cnt >= 50) { radiusSize = 220; circleColor = '#c0392b'; }
+                else if (cnt >= 10) { radiusSize = 160; circleColor = '#e67e22'; }
+                else { radiusSize = 110; circleColor = '#3498db'; }
 
                 var circle = new kakao.maps.Circle({
                     center: position,
@@ -229,26 +146,40 @@
                     fillColor: circleColor,
                     fillOpacity: 0.45
                 });
-
                 circle.setMap(map);
                 activeCircles.push(circle);
 
                 var infowindow = new kakao.maps.InfoWindow({
-                    content: '<div style="padding:6px 10px; font-size:12px; font-weight:bold;">📍 ' + item.title + '<br>목적: ' + item.purpose + '<br>방문: ' + item.count + '회</div>'
+                    content: '<div style="padding:6px 10px; font-size:12px; font-weight:bold;">📍 ' + item.title + '<br>목적: ' + item.purpose + '<br>방문: ' + cnt + '회</div>'
                 });
 
-                kakao.maps.event.addListener(circle, 'mouseover', function() {
-                    infowindow.setPosition(position);
-                    infowindow.open(map);
-                });
-
-                kakao.maps.event.addListener(circle, 'mouseout', function() {
-                    infowindow.close();
-                });
+                kakao.maps.event.addListener(circle, 'mouseover', () => infowindow.setPosition(position) || infowindow.open(map, circle));
+                kakao.maps.event.addListener(circle, 'mouseout', () => infowindow.close());
             });
         }
 
-        filterData();
+        // 2. 구글 시트(ID: 1Qcqw-8UQPIVtgZLrpE3cD8qXH97qbHG9YL1Ww0GcJZQ) 데이터 실시간 로드
+        const sheetId = '1Qcqw-8UQPIVtgZLrpE3cD8qXH97qbHG9YL1Ww0GcJZQ';
+        const url = `https://docs.google.com/spreadsheets/d/${sheetId}/gviz/tq?tqx=out:json`;
+
+        fetch(url)
+            .then(res => res.text())
+            .then(text => {
+                const json = JSON.parse(text.substring(47).slice(0, -2));
+                const rows = json.table.rows;
+
+                allVisitData = rows.map(row => ({
+                    title: row.c[0] ? row.c[0].v : '',
+                    lat: row.c[1] ? row.c[1].v : 0,
+                    lng: row.c[2] ? row.c[2].v : 0,
+                    purpose: row.c[3] ? row.c[3].v : '',
+                    period: row.c[4] ? row.c[4].v : '',
+                    count: row.c[5] ? row.c[5].v : 1
+                }));
+
+                filterData();
+            })
+            .catch(err => console.error("구글 시트 데이터 로드 실패:", err));
     </script>
 </body>
 </html>
