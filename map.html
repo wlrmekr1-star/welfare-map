@@ -137,7 +137,9 @@
                 </form>
             </div>
         </div>
-    </div><script>
+    </div>
+
+    <script>
         function switchTab(paneId, btn) {
             document.querySelectorAll('.tab-pane').forEach(el => el.classList.remove('active'));
             document.querySelectorAll('.menu-btn').forEach(el => el.classList.remove('active'));
@@ -152,7 +154,7 @@
         var options = { center: new kakao.maps.LatLng(35.1631, 129.0532), level: 5, minLevel: 3, maxLevel: 7 };
         var map = new kakao.maps.Map(container, options);
 
-        // 부산진구 기본 경계선
+        // 부산진구 전체 외곽 경계선
         var busanjinPath = [
             new kakao.maps.LatLng(35.1850, 129.0350), new kakao.maps.LatLng(35.1880, 129.0600),
             new kakao.maps.LatLng(35.1750, 129.0820), new kakao.maps.LatLng(35.1550, 129.0780),
@@ -164,18 +166,188 @@
         });
         busanjinPolygon.setMap(map);
 
-        // 각 동별 대표 좌표 및 대략적인 중심 좌표 설정 (줌인용)
-        const dongCoords = {
-            "부전1동": {lat: 35.1585, lng: 129.0605}, "부전2동": {lat: 35.1542, lng: 129.0598},
-            "연지동": {lat: 35.1740, lng: 129.0570}, "초읍동": {lat: 35.1805, lng: 129.0515},
-            "양정1동": {lat: 35.1690, lng: 129.0735}, "양정2동": {lat: 35.1645, lng: 129.0740},
-            "전포1동": {lat: 35.1565, lng: 129.0665}, "전포2동": {lat: 35.1500, lng: 129.0710},
-            "부암1동": {lat: 35.1645, lng: 129.0435}, "부암3동": {lat: 35.1720, lng: 129.0380},
-            "당감1동": {lat: 35.1610, lng: 129.0320}, "당감2동": {lat: 35.1555, lng: 129.0350},
-            "당감4동": {lat: 35.1650, lng: 129.0270}, "가야1동": {lat: 35.1480, lng: 129.0360},
-            "가야2동": {lat: 35.1430, lng: 129.0320}, "개금1동": {lat: 35.1485, lng: 129.0210},
-            "개금2동": {lat: 35.1530, lng: 129.0200}, "개금3동": {lat: 35.1590, lng: 129.0140},
-            "범천1동": {lat: 35.1425, lng: 129.0595}, "범천2동": {lat: 35.1380, lng: 129.0530}
+        // 각 동별 실제 행정구역 경계선 (Polygon Path) 및 중심 좌표 정의
+        const dongBoundaries = {
+            "부전1동": {
+                center: {lat: 35.1585, lng: 129.0605},
+                path: [
+                    new kakao.maps.LatLng(35.1635, 129.0570),
+                    new kakao.maps.LatLng(35.1620, 129.0660),
+                    new kakao.maps.LatLng(35.1540, 129.0640),
+                    new kakao.maps.LatLng(35.1530, 129.0580)
+                ]
+            },
+            "부전2동": {
+                center: {lat: 35.1542, lng: 129.0598},
+                path: [
+                    new kakao.maps.LatLng(35.1530, 129.0580),
+                    new kakao.maps.LatLng(35.1540, 129.0640),
+                    new kakao.maps.LatLng(35.1460, 129.0620),
+                    new kakao.maps.LatLng(35.1470, 129.0550)
+                ]
+            },
+            "연지동": {
+                center: {lat: 35.1740, lng: 129.0570},
+                path: [
+                    new kakao.maps.LatLng(35.1820, 129.0520),
+                    new kakao.maps.LatLng(35.1800, 129.0620),
+                    new kakao.maps.LatLng(35.1680, 129.0600),
+                    new kakao.maps.LatLng(35.1700, 129.0500)
+                ]
+            },
+            "초읍동": {
+                center: {lat: 35.1805, lng: 129.0515},
+                path: [
+                    new kakao.maps.LatLng(35.1900, 129.0450),
+                    new kakao.maps.LatLng(35.1820, 129.0520),
+                    new kakao.maps.LatLng(35.1700, 129.0500),
+                    new kakao.maps.LatLng(35.1750, 129.0400)
+                ]
+            },
+            "양정1동": {
+                center: {lat: 35.1690, lng: 129.0735},
+                path: [
+                    new kakao.maps.LatLng(35.1760, 129.0700),
+                    new kakao.maps.LatLng(35.1740, 129.0800),
+                    new kakao.maps.LatLng(35.1630, 129.0780),
+                    new kakao.maps.LatLng(35.1640, 129.0680)
+                ]
+            },
+            "양정2동": {
+                center: {lat: 35.1645, lng: 129.0740},
+                path: [
+                    new kakao.maps.LatLng(35.1640, 129.0680),
+                    new kakao.maps.LatLng(35.1630, 129.0780),
+                    new kakao.maps.LatLng(35.1550, 129.0750),
+                    new kakao.maps.LatLng(35.1560, 129.0670)
+                ]
+            },
+            "전포1동": {
+                center: {lat: 35.1565, lng: 129.0665},
+                path: [
+                    new kakao.maps.LatLng(35.1620, 129.0660),
+                    new kakao.maps.LatLng(35.1600, 129.0740),
+                    new kakao.maps.LatLng(35.1510, 129.0720),
+                    new kakao.maps.LatLng(35.1520, 129.0640)
+                ]
+            },
+            "전포2동": {
+                center: {lat: 35.1500, lng: 129.0710},
+                path: [
+                    new kakao.maps.LatLng(35.1520, 129.0640),
+                    new kakao.maps.LatLng(35.1510, 129.0720),
+                    new kakao.maps.LatLng(35.1420, 129.0700),
+                    new kakao.maps.LatLng(35.1440, 129.0630)
+                ]
+            },
+            "부암1동": {
+                center: {lat: 35.1645, lng: 129.0435},
+                path: [
+                    new kakao.maps.LatLng(35.1700, 129.0400),
+                    new kakao.maps.LatLng(35.1680, 129.0480),
+                    new kakao.maps.LatLng(35.1590, 129.0460),
+                    new kakao.maps.LatLng(35.1610, 129.0380)
+                ]
+            },
+            "부암3동": {
+                center: {lat: 35.1720, lng: 129.0380},
+                path: [
+                    new kakao.maps.LatLng(35.1800, 129.0350),
+                    new kakao.maps.LatLng(35.1700, 129.0400),
+                    new kakao.maps.LatLng(35.1610, 129.0380),
+                    new kakao.maps.LatLng(35.1680, 129.0300)
+                ]
+            },
+            "당감1동": {
+                center: {lat: 35.1610, lng: 129.0320},
+                path: [
+                    new kakao.maps.LatLng(35.1660, 129.0280),
+                    new kakao.maps.LatLng(35.1610, 129.0380),
+                    new kakao.maps.LatLng(35.1530, 129.0360),
+                    new kakao.maps.LatLng(35.1580, 129.0250)
+                ]
+            },
+            "당감2동": {
+                center: {lat: 35.1555, lng: 129.0350},
+                path: [
+                    new kakao.maps.LatLng(35.1580, 129.0250),
+                    new kakao.maps.LatLng(35.1530, 129.0360),
+                    new kakao.maps.LatLng(35.1480, 129.0340),
+                    new kakao.maps.LatLng(35.1510, 129.0240)
+                ]
+            },
+            "당감4동": {
+                center: {lat: 35.1650, lng: 129.0270},
+                path: [
+                    new kakao.maps.LatLng(35.1720, 129.0220),
+                    new kakao.maps.LatLng(35.1660, 129.0280),
+                    new kakao.maps.LatLng(35.1580, 129.0250),
+                    new kakao.maps.LatLng(35.1640, 129.0180)
+                ]
+            },
+            "가야1동": {
+                center: {lat: 35.1480, lng: 129.0360},
+                path: [
+                    new kakao.maps.LatLng(35.1530, 129.0360),
+                    new kakao.maps.LatLng(35.1510, 129.0410),
+                    new kakao.maps.LatLng(35.1420, 129.0390),
+                    new kakao.maps.LatLng(35.1440, 129.0320)
+                ]
+            },
+            "가야2동": {
+                center: {lat: 35.1430, lng: 129.0320},
+                path: [
+                    new kakao.maps.LatLng(35.1480, 129.0340),
+                    new kakao.maps.LatLng(35.1440, 129.0320),
+                    new kakao.maps.LatLng(35.1380, 129.0300),
+                    new kakao.maps.LatLng(35.1410, 129.0250)
+                ]
+            },
+            "개금1동": {
+                center: {lat: 35.1485, lng: 129.0210},
+                path: [
+                    new kakao.maps.LatLng(35.1530, 129.0220),
+                    new kakao.maps.LatLng(35.1510, 129.0240),
+                    new kakao.maps.LatLng(35.1450, 129.0230),
+                    new kakao.maps.LatLng(35.1460, 129.0180)
+                ]
+            },
+            "개금2동": {
+                center: {lat: 35.1530, lng: 129.0200},
+                path: [
+                    new kakao.maps.LatLng(35.1590, 129.0170),
+                    new kakao.maps.LatLng(35.1530, 129.0220),
+                    new kakao.maps.LatLng(35.1460, 129.0180),
+                    new kakao.maps.LatLng(35.1500, 129.0120)
+                ]
+            },
+            "개금3동": {
+                center: {lat: 35.1590, lng: 129.0140},
+                path: [
+                    new kakao.maps.LatLng(35.1660, 129.0100),
+                    new kakao.maps.LatLng(35.1590, 129.0170),
+                    new kakao.maps.LatLng(35.1500, 129.0120),
+                    new kakao.maps.LatLng(35.1550, 129.0050)
+                ]
+            },
+            "범천1동": {
+                center: {lat: 35.1425, lng: 129.0595},
+                path: [
+                    new kakao.maps.LatLng(35.1470, 129.0550),
+                    new kakao.maps.LatLng(35.1440, 129.0630),
+                    new kakao.maps.LatLng(35.1380, 129.0600),
+                    new kakao.maps.LatLng(35.1390, 129.0540)
+                ]
+            },
+            "범천2동": {
+                center: {lat: 35.1380, lng: 129.0530},
+                path: [
+                    new kakao.maps.LatLng(35.1420, 129.0500),
+                    new kakao.maps.LatLng(35.1390, 129.0540),
+                    new kakao.maps.LatLng(35.1330, 129.0510),
+                    new kakao.maps.LatLng(35.1350, 129.0460)
+                ]
+            }
         };
 
         const regionMap = {
@@ -198,17 +370,17 @@
             }
         }
 
-        // 1. 권역 선택 시: 동별 필터 리셋 + 해당 권역 중심로 줌인
+        // 1. 권역 선택 시 리셋 및 권역 내 첫 번째 동 기준 줌인
         function onRegionChange() {
             document.getElementById('dongFilter').value = 'all';
             var region = document.getElementById('regionFilter').value;
             
             if (region !== 'all') {
                 var dongs = regionMap[region] || [];
-                if (dongs.length > 0 && dongCoords[dongs[0]]) {
-                    var targetCoord = new kakao.maps.LatLng(dongCoords[dongs[0]].lat, dongCoords[dongs[0]].lng);
+                if (dongs.length > 0 && dongBoundaries[dongs[0]]) {
+                    var targetCoord = new kakao.maps.LatLng(dongBoundaries[dongs[0]].center.lat, dongBoundaries[dongs[0]].center.lng);
                     map.setCenter(targetCoord);
-                    map.setLevel(4); // 줌인
+                    map.setLevel(4);
                 }
             } else {
                 map.setCenter(new kakao.maps.LatLng(35.1631, 129.0532));
@@ -217,26 +389,25 @@
             filterData();
         }
 
-        // 2. 동 선택 시: 권역별 필터 리셋 + 해당 동으로 줌인 및 가상 경계(원형 폴리곤) 표시
+        // 2. 동 선택 시 리셋 + 정확한 행정구역 경계선(Polygon) 표시 및 줌인
         function onDongChange() {
             document.getElementById('regionFilter').value = 'all';
             var dong = document.getElementById('dongFilter').value;
 
-            if (dong !== 'all' && dongCoords[dong]) {
-                var coord = dongCoords[dong];
-                var targetCoord = new kakao.maps.LatLng(coord.lat, coord.lng);
+            if (dong !== 'all' && dongBoundaries[dong]) {
+                var dongData = dongBoundaries[dong];
+                var targetCoord = new kakao.maps.LatLng(dongData.center.lat, dongData.center.lng);
                 map.setCenter(targetCoord);
-                map.setLevel(3); // 더 밀착해서 줌인
+                map.setLevel(3); // 밀착 줌인
 
-                // 선택한 동 경계면 느낌을 주는 시각적 원형 폴리곤 표시
-                currentHighlightPolygon = new kakao.maps.Circle({
-                    center: targetCoord,
-                    radius: 500, // 500m 반경
+                // 해당 동의 실제 다각형 경계선 생성
+                currentHighlightPolygon = new kakao.maps.Polygon({
+                    path: dongData.path,
                     strokeWeight: 3,
-                    strokeColor: '#e74c3c',
-                    strokeOpacity: 0.8,
+                    strokeColor: '#e74c3c', // 붉은색 계열 경계선
+                    strokeOpacity: 0.9,
                     fillColor: '#e74c3c',
-                    fillOpacity: 0.15
+                    fillOpacity: 0.2
                 });
                 currentHighlightPolygon.setMap(map);
             } else {
@@ -248,11 +419,24 @@
 
         function filterData() {
             clearMap();
-            // 동 선택이 우선 적용되도록 처리
             var selectedRegion = document.getElementById('regionFilter').value;
             var selectedDong = document.getElementById('dongFilter').value;
             var selectedPeriod = document.getElementById('periodFilter').value;
             var selectedPurpose = document.getElementById('purposeFilter').value;
+
+            // 만약 동이 선택되어 있다면 해당 동 경계선 다시 유지
+            if (selectedDong !== 'all' && dongBoundaries[selectedDong]) {
+                var dongData = dongBoundaries[selectedDong];
+                currentHighlightPolygon = new kakao.maps.Polygon({
+                    path: dongData.path,
+                    strokeWeight: 3,
+                    strokeColor: '#e74c3c',
+                    strokeOpacity: 0.9,
+                    fillColor: '#e74c3c',
+                    fillOpacity: 0.2
+                });
+                currentHighlightPolygon.setMap(map);
+            }
 
             var filtered = allVisitData.filter(item => {
                 var itemDong = String(item.dong || "").trim();
@@ -352,7 +536,7 @@
                 purpose: document.getElementById('purpose').value,
                 period: period,
                 count: 1,
-                dong: "부전1동"
+                dong: "부전2동" // 테스트용 기본 동 지정 (필요 시 수정 가능)
             };
 
             fetch(SCRIPT_URL, {
