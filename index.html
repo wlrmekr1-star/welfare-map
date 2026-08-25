@@ -10,8 +10,10 @@
         h2 { color: #2c3e50; text-align: center; }
         label { display: block; margin-top: 12px; font-weight: bold; font-size: 14px; color: #333; }
         input, select { width: 100%; padding: 10px; margin-top: 5px; border-radius: 6px; border: 1px solid #ccc; box-sizing: border-box; }
-        button { width: 100%; background: #27ae60; color: white; border: none; padding: 12px; border-radius: 6px; font-size: 16px; font-weight: bold; margin-top: 20px; cursor: pointer; }
-        button:hover { background: #219653; }
+        .gps-btn { background: #2980b9; color: white; border: none; padding: 8px; border-radius: 6px; font-size: 13px; margin-top: 6px; cursor: pointer; }
+        .gps-btn:hover { background: #2471a3; }
+        button[type="submit"] { width: 100%; background: #27ae60; color: white; border: none; padding: 12px; border-radius: 6px; font-size: 16px; font-weight: bold; margin-top: 20px; cursor: pointer; }
+        button[type="submit"]:hover { background: #219653; }
     </style>
 </head>
 <body>
@@ -21,11 +23,13 @@
             <label>기관명 / 장소명</label>
             <input type="text" id="title" placeholder="예: 부산진구 종합사회복지관" required>
 
-            <label>위도 (Latitude)</label>
-            <input type="text" id="lat" placeholder="예: 35.1631" required>
-
-            <label>경도 (Longitude)</label>
-            <input type="text" id="lng" placeholder="예: 129.0532" required>
+            <label>위치 좌표 (현재 현장 위치)</label>
+            <button type="button" class="gps-btn" onclick="getLocation()">📍 현재 내 위치(GPS) 자동으로 가져오기</button>
+            
+            <div style="display: flex; gap: 10px; margin-top: 5px;">
+                <input type="text" id="lat" placeholder="위도" readonly required style="background: #f9f9f9;">
+                <input type="text" id="lng" placeholder="경도" readonly required style="background: #f9f9f9;">
+            </div>
 
             <label>방문 목적</label>
             <select id="purpose">
@@ -58,15 +62,35 @@
     </div>
 
     <script>
-        // ⚠️ 구글 앱스 스크립트 웹 앱 URL 반영 완료
         const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxhr2hZbgL98zDtbIqJKO3UdnAXbzfdgvaXEK_4YiB9Eeuo80GzYnnRH_BR4UtfzB3P/exec";
+
+        // 스마트폰 GPS로 현재 위도/경도를 자동 입력하는 함수
+        function getLocation() {
+            if (navigator.geolocation) {
+                navigator.geolocation.getCurrentPosition(function(position) {
+                    document.getElementById('lat').value = position.coords.latitude;
+                    document.getElementById('lng').value = position.coords.longitude;
+                    alert('현재 위치가 성공적으로 잡혔습니다!');
+                }, function(error) {
+                    alert('위치 가져오기 실패: 스마트폰의 위치(GPS) 권한을 허용해 주세요.');
+                });
+            } else {
+                alert('이 브라우저는 위치 정보를 지원하지 않습니다.');
+            }
+        }
 
         document.getElementById('visitForm').addEventListener('submit', function(e) {
             e.preventDefault();
             
+            const latVal = document.getElementById('lat').value;
+            if(!latVal) {
+                alert('먼저 "현재 내 위치(GPS) 자동으로 가져오기" 버튼을 눌러주세요!');
+                return;
+            }
+
             const data = {
                 title: document.getElementById('title').value,
-                lat: document.getElementById('lat').value,
+                lat: latVal,
                 lng: document.getElementById('lng').value,
                 purpose: document.getElementById('purpose').value,
                 period: document.getElementById('period').value,
