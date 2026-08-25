@@ -165,12 +165,12 @@
                 const rows = json.table.rows;
 
                 allVisitData = rows.map(row => ({
-                    title: row.c[0] ? row.c[0].v : '현장 방문',
-                    lat: row.c[1] ? row.c[1].v : 35.1631,
-                    lng: row.c[2] ? row.c[2].v : 129.0532,
-                    purpose: row.c[3] ? row.c[3].v : '홍보',
-                    period: row.c[4] ? row.c[4].v : '8',
-                    count: row.c[5] ? row.c[5].v : 1
+                    title: (row.c[0] && row.c[0].v) ? row.c[0].v : '현장 방문',
+                    lat: (row.c[1] && row.c[1].v) ? row.c[1].v : 35.1631,
+                    lng: (row.c[2] && row.c[2].v) ? row.c[2].v : 129.0532,
+                    purpose: (row.c[3] && row.c[3].v) ? row.c[3].v : '홍보',
+                    period: (row.c[4] && row.c[4].v) ? row.c[4].v : '8',
+                    count: (row.c[5] && row.c[5].v) ? row.c[5].v : 1
                 }));
 
                 filterData();
