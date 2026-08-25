@@ -8,7 +8,6 @@
     <style>
         body { font-family: 'Malgun Gothic', sans-serif; margin: 0; padding: 0; display: flex; height: 100vh; background: #f0f2f5; overflow: hidden; }
         
-        /* 왼쪽 제미나이 스타일 메뉴바 */
         #left-menu { width: 260px; background: #1e1e2f; color: #fff; display: flex; flex-direction: column; flex-shrink: 0; box-shadow: 2px 0 10px rgba(0,0,0,0.1); z-index: 20; }
         .menu-header { padding: 20px; font-size: 18px; font-weight: bold; border-bottom: 1px solid #2d2d44; color: #ecf0f1; }
         .menu-list { display: flex; flex-direction: column; padding: 15px 10px; gap: 8px; }
@@ -16,17 +15,14 @@
         .menu-btn:hover { background: #2a2a40; color: #fff; }
         .menu-btn.active { background: #27ae60; color: #fff; }
 
-        /* 메인 컨텐츠 영역 (겹침 방지 수정 완료) */
         .main-container { flex-grow: 1; height: 100vh; position: relative; background: #f0f2f5; overflow: hidden; }
         .tab-pane { display: none; width: 100%; height: 100%; position: absolute; top: 0; left: 0; box-sizing: border-box; background: #f0f2f5; }
         .tab-pane.active { display: flex; }
 
-        /* 1번 탭: 지도 대시보드 화면 */
         #dash-pane { display: flex; }
         #dash-sidebar { width: 340px; background: #ffffff; padding: 20px; box-sizing: border-box; overflow-y: auto; flex-shrink: 0; z-index: 10; box-shadow: 2px 0 10px rgba(0,0,0,0.05); }
         #map { flex-grow: 1; height: 100%; }
 
-        /* 2번 탭: 현장 방문 인증 화면 */
         #auth-pane { justify-content: center; align-items: center; padding: 20px; z-index: 30; }
         .card { background: #fff; padding: 30px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.08); width: 100%; max-width: 420px; box-sizing: border-box; }
         h2 { color: #2c3e50; text-align: center; margin-top: 0; }
@@ -36,7 +32,6 @@
         button[type="submit"] { width: 100%; background: #27ae60; color: white; border: none; padding: 15px; border-radius: 6px; font-size: 16px; font-weight: bold; margin-top: 25px; cursor: pointer; transition: 0.2s; }
         button[type="submit"]:hover { background: #219653; }
 
-        /* 대시보드 내부 요소 스타일 */
         .stats-box { background: #eef2f7; padding: 12px; border-radius: 8px; margin-bottom: 12px; }
         .stats-box h3 { margin: 0 0 4px 0; font-size: 12px; color: #555; }
         .stats-box p { margin: 0; font-size: 16px; font-weight: bold; color: #2980b9; }
@@ -51,7 +46,6 @@
 </head>
 <body>
 
-    <!-- 왼쪽 제미나이 스타일 메뉴바 -->
     <div id="left-menu">
         <div class="menu-header">📍 복지 방문 시스템</div>
         <div class="menu-list">
@@ -60,10 +54,8 @@
         </div>
     </div>
 
-    <!-- 우측 메인 컨텐츠 창 -->
     <div class="main-container">
         
-        <!-- 1번 탭: 지도 대시보드 화면 -->
         <div id="dash-pane" class="tab-pane active">
             <div id="dash-sidebar">
                 <h2>📊 방문 분석</h2>
@@ -72,10 +64,9 @@
                     <p id="totalCount">0 건 (부산진구 전체)</p>
                 </div>
 
-                <!-- 권역별 필터 추가 -->
                 <div class="filter-section">
                     <h4>🌐 권역별 조회</h4>
-                    <select id="regionFilter" onchange="filterData()">
+                    <select id="regionFilter" onchange="onRegionChange()">
                         <option value="all">전체 권역 보기</option>
                         <option value="1권역">1권역 (부전1·연지·초읍·양정1·2동)</option>
                         <option value="2권역">2권역 (부전2·전포1·2·범천1·2동)</option>
@@ -84,31 +75,20 @@
                     </select>
                 </div>
 
-                <!-- 동별 필터 추가 (20개 동) -->
                 <div class="filter-section">
                     <h4>🏠 동별 조회</h4>
-                    <select id="dongFilter" onchange="filterData()">
+                    <select id="dongFilter" onchange="onDongChange()">
                         <option value="all">전체 동 보기</option>
-                        <option value="부전1동">부전1동</option>
-                        <option value="부전2동">부전2동</option>
-                        <option value="연지동">연지동</option>
-                        <option value="초읍동">초읍동</option>
-                        <option value="양정1동">양정1동</option>
-                        <option value="양정2동">양정2동</option>
-                        <option value="전포1동">전포1동</option>
-                        <option value="전포2동">전포2동</option>
-                        <option value="부암1동">부암1동</option>
-                        <option value="부암3동">부암3동</option>
-                        <option value="당감1동">당감1동</option>
-                        <option value="당감2동">당감2동</option>
-                        <option value="당감4동">당감4동</option>
-                        <option value="가야1동">가야1동</option>
-                        <option value="가야2동">가야2동</option>
-                        <option value="개금1동">개금1동</option>
-                        <option value="개금2동">개금2동</option>
-                        <option value="개금3동">개금3동</option>
-                        <option value="범천1동">범천1동</option>
-                        <option value="범천2동">범천2동</option>
+                        <option value="부전1동">부전1동</option><option value="부전2동">부전2동</option>
+                        <option value="연지동">연지동</option><option value="초읍동">초읍동</option>
+                        <option value="양정1동">양정1동</option><option value="양정2동">양정2동</option>
+                        <option value="전포1동">전포1동</option><option value="전포2동">전포2동</option>
+                        <option value="부암1동">부암1동</option><option value="부암3동">부암3동</option>
+                        <option value="당감1동">당감1동</option><option value="당감2동">당감2동</option>
+                        <option value="당감4동">당감4동</option><option value="가야1동">가야1동</option>
+                        <option value="가야2동">가야2동</option><option value="개금1동">개금1동</option>
+                        <option value="개금2동">개금2동</option><option value="개금3동">개금3동</option>
+                        <option value="범천1동">범천1동</option><option value="범천2동">범천2동</option>
                     </select>
                 </div>
 
@@ -116,18 +96,9 @@
                     <h4>📅 기간별 조회</h4>
                     <select id="periodFilter" onchange="filterData()">
                         <option value="year">연간 통합 보기 (전체)</option>
-                        <option value="1">1월</option>
-                        <option value="2">2월</option>
-                        <option value="3">3월</option>
-                        <option value="4">4월</option>
-                        <option value="5">5월</option>
-                        <option value="6">6월</option>
-                        <option value="7">7월</option>
-                        <option value="8">8월</option>
-                        <option value="9">9월</option>
-                        <option value="10">10월</option>
-                        <option value="11">11월</option>
-                        <option value="12">12월</option>
+                        <option value="1">1월</option><option value="2">2월</option><option value="3">3월</option><option value="4">4월</option>
+                        <option value="5">5월</option><option value="6">6월</option><option value="7">7월</option><option value="8">8월</option>
+                        <option value="9">9월</option><option value="10">10월</option><option value="11">11월</option><option value="12">12월</option>
                     </select>
                 </div>
 
@@ -151,7 +122,6 @@
             <div id="map"></div>
         </div>
 
-        <!-- 2번 탭: 현장 방문 인증 입력 화면 -->
         <div id="auth-pane" class="tab-pane">
             <div class="card">
                 <h2>📍 복지 방문 인증</h2>
@@ -162,65 +132,52 @@
                         <option value="사각지대발굴 활동">사각지대발굴 활동</option>
                         <option value="사례관리(방문)">사례관리(방문)</option>
                     </select>
-
                     <div class="info-msg">💡 전송 버튼을 누르면 현재 위치가 자동으로 기록됩니다.</div>
-
                     <button type="submit" id="submitBtn">인증 데이터 전송하기</button>
                 </form>
             </div>
         </div>
     </div><script>
-        // 좌측 메뉴 탭 전환 함수 (겹침 오류 완벽 해결)
         function switchTab(paneId, btn) {
             document.querySelectorAll('.tab-pane').forEach(el => el.classList.remove('active'));
             document.querySelectorAll('.menu-btn').forEach(el => el.classList.remove('active'));
-            
             document.getElementById(paneId).classList.add('active');
             btn.classList.add('active');
-
             if(paneId === 'dash-pane' && map) {
                 setTimeout(() => { map.relayout(); }, 100);
             }
         }
 
-        // 카카오맵 초기화
         var container = document.getElementById('map');
-        var options = {
-            center: new kakao.maps.LatLng(35.1631, 129.0532), 
-            level: 5,
-            minLevel: 3,
-            maxLevel: 7
-        };
+        var options = { center: new kakao.maps.LatLng(35.1631, 129.0532), level: 5, minLevel: 3, maxLevel: 7 };
         var map = new kakao.maps.Map(container, options);
 
+        // 부산진구 기본 경계선
         var busanjinPath = [
-            new kakao.maps.LatLng(35.1850, 129.0350),
-            new kakao.maps.LatLng(35.1880, 129.0600),
-            new kakao.maps.LatLng(35.1750, 129.0820),
-            new kakao.maps.LatLng(35.1550, 129.0780),
-            new kakao.maps.LatLng(35.1350, 129.0620),
-            new kakao.maps.LatLng(35.1380, 129.0400),
+            new kakao.maps.LatLng(35.1850, 129.0350), new kakao.maps.LatLng(35.1880, 129.0600),
+            new kakao.maps.LatLng(35.1750, 129.0820), new kakao.maps.LatLng(35.1550, 129.0780),
+            new kakao.maps.LatLng(35.1350, 129.0620), new kakao.maps.LatLng(35.1380, 129.0400),
             new kakao.maps.LatLng(35.1520, 129.0150)
         ];
         var busanjinPolygon = new kakao.maps.Polygon({
-            path: busanjinPath,
-            strokeWeight: 3,
-            strokeColor: '#27ae60',
-            strokeOpacity: 0.8,
-            fillColor: '#27ae60',
-            fillOpacity: 0.06
+            path: busanjinPath, strokeWeight: 3, strokeColor: '#27ae60', strokeOpacity: 0.8, fillColor: '#27ae60', fillOpacity: 0.06
         });
         busanjinPolygon.setMap(map);
 
-        let allVisitData = [];
-        let activeCircles = [];
+        // 각 동별 대표 좌표 및 대략적인 중심 좌표 설정 (줌인용)
+        const dongCoords = {
+            "부전1동": {lat: 35.1585, lng: 129.0605}, "부전2동": {lat: 35.1542, lng: 129.0598},
+            "연지동": {lat: 35.1740, lng: 129.0570}, "초읍동": {lat: 35.1805, lng: 129.0515},
+            "양정1동": {lat: 35.1690, lng: 129.0735}, "양정2동": {lat: 35.1645, lng: 129.0740},
+            "전포1동": {lat: 35.1565, lng: 129.0665}, "전포2동": {lat: 35.1500, lng: 129.0710},
+            "부암1동": {lat: 35.1645, lng: 129.0435}, "부암3동": {lat: 35.1720, lng: 129.0380},
+            "당감1동": {lat: 35.1610, lng: 129.0320}, "당감2동": {lat: 35.1555, lng: 129.0350},
+            "당감4동": {lat: 35.1650, lng: 129.0270}, "가야1동": {lat: 35.1480, lng: 129.0360},
+            "가야2동": {lat: 35.1430, lng: 129.0320}, "개금1동": {lat: 35.1485, lng: 129.0210},
+            "개금2동": {lat: 35.1530, lng: 129.0200}, "개금3동": {lat: 35.1590, lng: 129.0140},
+            "범천1동": {lat: 35.1425, lng: 129.0595}, "범천2동": {lat: 35.1380, lng: 129.0530}
+        };
 
-        function clearMap() {
-            activeCircles.forEach(c => c.setMap(null));
-            activeCircles = [];
-        }
-
-        // 권역별 동 매핑 정의
         const regionMap = {
             "1권역": ["부전1동", "연지동", "초읍동", "양정1동", "양정2동"],
             "2권역": ["부전2동", "전포1동", "전포2동", "범천1동", "범천2동"],
@@ -228,8 +185,70 @@
             "4권역": ["가야2동", "개금1동", "개금2동", "개금3동"]
         };
 
+        let allVisitData = [];
+        let activeCircles = [];
+        let currentHighlightPolygon = null;
+
+        function clearMap() {
+            activeCircles.forEach(c => c.setMap(null));
+            activeCircles = [];
+            if (currentHighlightPolygon) {
+                currentHighlightPolygon.setMap(null);
+                currentHighlightPolygon = null;
+            }
+        }
+
+        // 1. 권역 선택 시: 동별 필터 리셋 + 해당 권역 중심로 줌인
+        function onRegionChange() {
+            document.getElementById('dongFilter').value = 'all';
+            var region = document.getElementById('regionFilter').value;
+            
+            if (region !== 'all') {
+                var dongs = regionMap[region] || [];
+                if (dongs.length > 0 && dongCoords[dongs[0]]) {
+                    var targetCoord = new kakao.maps.LatLng(dongCoords[dongs[0]].lat, dongCoords[dongs[0]].lng);
+                    map.setCenter(targetCoord);
+                    map.setLevel(4); // 줌인
+                }
+            } else {
+                map.setCenter(new kakao.maps.LatLng(35.1631, 129.0532));
+                map.setLevel(5);
+            }
+            filterData();
+        }
+
+        // 2. 동 선택 시: 권역별 필터 리셋 + 해당 동으로 줌인 및 가상 경계(원형 폴리곤) 표시
+        function onDongChange() {
+            document.getElementById('regionFilter').value = 'all';
+            var dong = document.getElementById('dongFilter').value;
+
+            if (dong !== 'all' && dongCoords[dong]) {
+                var coord = dongCoords[dong];
+                var targetCoord = new kakao.maps.LatLng(coord.lat, coord.lng);
+                map.setCenter(targetCoord);
+                map.setLevel(3); // 더 밀착해서 줌인
+
+                // 선택한 동 경계면 느낌을 주는 시각적 원형 폴리곤 표시
+                currentHighlightPolygon = new kakao.maps.Circle({
+                    center: targetCoord,
+                    radius: 500, // 500m 반경
+                    strokeWeight: 3,
+                    strokeColor: '#e74c3c',
+                    strokeOpacity: 0.8,
+                    fillColor: '#e74c3c',
+                    fillOpacity: 0.15
+                });
+                currentHighlightPolygon.setMap(map);
+            } else {
+                map.setCenter(new kakao.maps.LatLng(35.1631, 129.0532));
+                map.setLevel(5);
+            }
+            filterData();
+        }
+
         function filterData() {
             clearMap();
+            // 동 선택이 우선 적용되도록 처리
             var selectedRegion = document.getElementById('regionFilter').value;
             var selectedDong = document.getElementById('dongFilter').value;
             var selectedPeriod = document.getElementById('periodFilter').value;
@@ -238,20 +257,14 @@
             var filtered = allVisitData.filter(item => {
                 var itemDong = String(item.dong || "").trim();
                 
-                // 권역 필터 체크
                 var matchRegion = true;
-                if (selectedRegion !== 'all') {
+                if (selectedDong === 'all' && selectedRegion !== 'all') {
                     var allowedDongs = regionMap[selectedRegion] || [];
                     matchRegion = allowedDongs.includes(itemDong);
                 }
 
-                // 동별 필터 체크
                 var matchDong = (selectedDong === 'all' || itemDong === selectedDong);
-                
-                // 기간 필터 체크
                 var matchPeriod = (selectedPeriod === 'year' || String(item.period).trim() === String(selectedPeriod));
-                
-                // 목적 필터 체크
                 var matchPurpose = (selectedPurpose === 'all' || String(item.purpose).trim() === String(selectedPurpose));
 
                 return matchRegion && matchDong && matchPeriod && matchPurpose;
@@ -269,13 +282,7 @@
                 else { radiusSize = 110; circleColor = '#3498db'; }
 
                 var circle = new kakao.maps.Circle({
-                    center: position,
-                    radius: radiusSize, 
-                    strokeWeight: 2,
-                    strokeColor: circleColor,
-                    strokeOpacity: 0.9,
-                    fillColor: circleColor,
-                    fillOpacity: 0.45
+                    center: position, radius: radiusSize, strokeWeight: 2, strokeColor: circleColor, strokeOpacity: 0.9, fillColor: circleColor, fillOpacity: 0.45
                 });
                 circle.setMap(map);
                 activeCircles.push(circle);
@@ -289,7 +296,6 @@
             });
         }
 
-        // 구글 시트 데이터 로드 (dong 정보 추가 연동)
         const sheetId = '1Qcqw-8UQPIVtgZLrpE3cD8qXH97qbHG9YL1Ww0GcJZQ';
         const url = `https://docs.google.com/spreadsheets/d/${sheetId}/gviz/tq?tqx=out:json`;
 
@@ -307,7 +313,7 @@
                         purpose: (row.c[3] && row.c[3].v) ? row.c[3].v : '홍보',
                         period: (row.c[4] && row.c[4].v) ? row.c[4].v : '8',
                         count: (row.c[5] && row.c[5].v) ? row.c[5].v : 1,
-                        dong: (row.c[6] && row.c[6].v) ? row.c[6].v : '부전1동' // G열 동 정보 매핑
+                        dong: (row.c[6] && row.c[6].v) ? row.c[6].v : '부전1동'
                     }));
 
                     filterData();
@@ -317,7 +323,6 @@
 
         loadSheetData();
 
-        // 방문 인증 전송 로직
         const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbw2XwMqXTalERQxGKaNUPjoL6pB3AZkzRn6VWZ9IGsKVneCvpiRKQHdN9QRIjvE89I/exec";
 
         document.getElementById('visitForm').addEventListener('submit', function(e) {
@@ -347,7 +352,7 @@
                 purpose: document.getElementById('purpose').value,
                 period: period,
                 count: 1,
-                dong: "부전1동" // 기본 동 (추후 위치 기반 동 자동 판별 연동 가능)
+                dong: "부전1동"
             };
 
             fetch(SCRIPT_URL, {
@@ -361,7 +366,6 @@
                 btn.innerText = "인증 데이터 전송하기";
                 btn.disabled = false;
                 document.getElementById('visitForm').reset();
-                
                 setTimeout(loadSheetData, 1500);
             }).catch(error => {
                 alert('전송 실패: ' + error);
