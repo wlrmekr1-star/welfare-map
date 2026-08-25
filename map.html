@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>복지 방문 데이터 통합 대시보드</title>
-    <!-- 카카오맵 API 스크립트 (안전한 표준 로딩 방식) -->
+    <!-- 카카오맵 API 스크립트 -->
     <script type="text/javascript" src="https://dapi.kakao.com/v2/maps/sdk.js?appkey=9821f83fe3895fe4e030aee5107a8990&libraries=services"></script>
     <style>
         body {
@@ -97,7 +97,6 @@
             <p id="totalCount">0 건 (부산진구 전체)</p>
         </div>
 
-        <!-- 📅 기간별 조회 -->
         <div class="filter-section">
             <h4>📅 기간별 조회</h4>
             <select id="periodFilter" onchange="filterData()">
@@ -117,7 +116,6 @@
             </select>
         </div>
 
-        <!-- 🎯 방문 목적별 필터 -->
         <div class="filter-section">
             <h4>🎯 방문 목적별 필터</h4>
             <select id="purposeFilter" onchange="filterData()">
@@ -128,7 +126,6 @@
             </select>
         </div>
 
-        <!-- 🗺️ 범례 -->
         <div class="legend-box">
             <h4>🗺️ 방문 횟수별 구역 색상</h4>
             <div class="legend-item">
@@ -146,14 +143,13 @@
         </div>
 
         <div class="info-desc">
-            💡 <b>안내:</b> 카카오맵 API가 적용된 부산진구 대시보드입니다.
+            💡 <b>안내:</b> 카카오맵 API가 정상 적용된 부산진구 대시보드입니다.
         </div>
     </div>
 
     <div id="map"></div>
 
     <script>
-        // 1. 지도 초기화 및 줌 제한
         var container = document.getElementById('map');
         var options = {
             center: new kakao.maps.LatLng(35.1631, 129.0532), 
@@ -163,7 +159,6 @@
         };
         var map = new kakao.maps.Map(container, options);
 
-        // 2. 부산진구 실제 다각형 경계선
         var busanjinPath = [
             new kakao.maps.LatLng(35.1850, 129.0350),
             new kakao.maps.LatLng(35.1880, 129.0600),
@@ -185,7 +180,6 @@
         });
         busanjinPolygon.setMap(map);
 
-        // 3. 실제 데이터 배열 (현재는 빈 상태)
         var allVisitData = [];
         var activeCircles = [];
 
