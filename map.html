@@ -192,7 +192,6 @@
             polygonOverlays = [];
         }
 
-        // 권역 또는 동 이름에 맞춰 다중 폴리곤 렌더링 지원
         function drawGeoJsonPolygon(targetFilter, isRegion = false) {
             clearMapPolygons();
             if (!geojsonFeatureCollection) return;
@@ -213,13 +212,14 @@
                     coordinates.forEach(ring => {
                         var path = ring.map(coord => new kakao.maps.LatLng(coord[1], coord[0]));
                         
+                        var isAll = (targetFilter === 'all');
                         var polygon = new kakao.maps.Polygon({
                             path: path,
-                            strokeWeight: isRegion ? 3 : 3,
-                            strokeColor: isRegion ? '#3498db' : '#e74c3c',
-                            strokeOpacity: 0.9,
-                            fillColor: isRegion ? '#3498db' : '#e74c3c',
-                            fillOpacity: isRegion ? 0.2 : 0.3
+                            strokeWeight: isAll ? 2 : 3,
+                            strokeColor: isAll ? '#e74c3c' : (isRegion ? '#3498db' : '#e74c3c'),
+                            strokeOpacity: 0.8,
+                            fillColor: isAll ? '#000000' : (isRegion ? '#3498db' : '#e74c3c'),
+                            fillOpacity: isAll ? 0.0 : (isRegion ? 0.15 : 0.25) // 전체 보기일 때는 안쪽 채우기 없음(0.0)으로 경계선만 표시
                         });
                         polygon.setMap(map);
                         polygonOverlays.push(polygon);
@@ -234,7 +234,7 @@
             clearMapPolygons();
 
             if (region !== 'all') {
-                drawGeoJsonPolygon(region, true); // 권역 모드로 다중 동 경계 표시
+                drawGeoJsonPolygon(region, true);
                 map.setCenter(new kakao.maps.LatLng(35.1631, 129.0532));
                 map.setLevel(5);
             } else {
@@ -250,10 +250,10 @@
             var dong = document.getElementById('dongFilter').value;
             
             if (dong !== 'all' && dongLocations[dong]) {
-                drawGeoJsonPolygon(dong, false); // 단일 동 모드
+                drawGeoJsonPolygon(dong, false);
                 var loc = dongLocations[dong];
                 map.setCenter(new kakao.maps.LatLng(loc.lat, loc.lng));
-                map.setLevel(3);
+                map.setLevel(4); // 줌인 단계를 기존 3에서 4로 한 단계 풀어서 넓게 보이도록 조정
             } else {
                 drawGeoJsonPolygon('all');
                 map.setCenter(new kakao.maps.LatLng(35.1631, 129.0532));
