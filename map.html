@@ -4,7 +4,6 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>복지 방문 데이터 통합 대시보드</title>
-    <!-- 카카오맵 API 스크립트 -->
     <script type="text/javascript" src="https://dapi.kakao.com/v2/maps/sdk.js?appkey=9821f83fe3895fe4e030aee5107a8990&libraries=services"></script>
     <style>
         body { font-family: 'Malgun Gothic', sans-serif; margin: 0; padding: 0; display: flex; height: 100vh; background: #f0f2f5; }
@@ -36,7 +35,7 @@
         <div class="filter-section">
             <h4>📅 기간별 조회</h4>
             <select id="periodFilter" onchange="filterData()">
-                <option value="year">연간 통합 보기 (2026년)</option>
+                <option value="year">연간 통합 보기 (전체)</option>
                 <option value="1">1월</option>
                 <option value="2">2월</option>
                 <option value="3">3월</option>
@@ -70,14 +69,13 @@
         </div>
 
         <div class="info-desc">
-            💡 <b>안내:</b> 구글 시트와 연동되어 스마트폰 인증 데이터가 실시간 표시됩니다.
+            💡 <b>안내:</b> 구글 시트 데이터가 실시간 연동되어 지도에 표시됩니다.
         </div>
     </div>
 
     <div id="map"></div>
 
     <script>
-        // 1. 카카오맵 초기화
         var container = document.getElementById('map');
         var options = {
             center: new kakao.maps.LatLng(35.1631, 129.0532), 
@@ -87,7 +85,6 @@
         };
         var map = new kakao.maps.Map(container, options);
 
-        // 부산진구 경계선
         var busanjinPath = [
             new kakao.maps.LatLng(35.1850, 129.0350),
             new kakao.maps.LatLng(35.1880, 129.0600),
@@ -121,17 +118,17 @@
             var selectedPurpose = document.getElementById('purposeFilter').value;
 
             var filtered = allVisitData.filter(item => {
-                var matchPeriod = (selectedPeriod === 'year' || item.period == selectedPeriod);
-                var matchPurpose = (selectedPurpose === 'all' || item.purpose === selectedPurpose);
+                var matchPeriod = (selectedPeriod === 'year' || String(item.period).trim() === String(selectedPeriod));
+                var matchPurpose = (selectedPurpose === 'all' || String(item.purpose).trim() === String(selectedPurpose));
                 return matchPeriod && matchPurpose;
             });
 
-            var totalSum = filtered.reduce((sum, item) => sum + Number(item.count), 0);
+            var totalSum = filtered.reduce((sum, item) => sum + Number(item.count || 1), 0);
             document.getElementById('totalCount').innerText = totalSum + " 건 (부산진구 전체)";
 
             filtered.forEach(item => {
-                var position = new kakao.maps.LatLng(item.lat, item.lng);
-                var cnt = Number(item.count);
+                var position = new kakao.maps.LatLng(Number(item.lat), Number(item.lng));
+                var cnt = Number(item.count || 1);
                 var radiusSize, circleColor;
                 if (cnt >= 50) { radiusSize = 220; circleColor = '#c0392b'; }
                 else if (cnt >= 10) { radiusSize = 160; circleColor = '#e67e22'; }
@@ -150,7 +147,7 @@
                 activeCircles.push(circle);
 
                 var infowindow = new kakao.maps.InfoWindow({
-                    content: '<div style="padding:6px 10px; font-size:12px; font-weight:bold;">📍 ' + item.title + '<br>목적: ' + item.purpose + '<br>방문: ' + cnt + '회</div>'
+                    content: '<div style="padding:6px 10px; font-size:12px; font-weight:bold;">📍 ' + (item.title || '현장 방문') + '<br>목적: ' + item.purpose + '<br>방문: ' + cnt + '회</div>'
                 });
 
                 kakao.maps.event.addListener(circle, 'mouseover', () => infowindow.setPosition(position) || infowindow.open(map, circle));
@@ -158,7 +155,6 @@
             });
         }
 
-        // 2. 구글 시트(ID: 1Qcqw-8UQPIVtgZLrpE3cD8qXH97qbHG9YL1Ww0GcJZQ) 데이터 실시간 로드
         const sheetId = '1Qcqw-8UQPIVtgZLrpE3cD8qXH97qbHG9YL1Ww0GcJZQ';
         const url = `https://docs.google.com/spreadsheets/d/${sheetId}/gviz/tq?tqx=out:json`;
 
@@ -169,11 +165,11 @@
                 const rows = json.table.rows;
 
                 allVisitData = rows.map(row => ({
-                    title: row.c[0] ? row.c[0].v : '',
-                    lat: row.c[1] ? row.c[1].v : 0,
-                    lng: row.c[2] ? row.c[2].v : 0,
-                    purpose: row.c[3] ? row.c[3].v : '',
-                    period: row.c[4] ? row.c[4].v : '',
+                    title: row.c[0] ? row.c[0].v : '현장 방문',
+                    lat: row.c[1] ? row.c[1].v : 35.1631,
+                    lng: row.c[2] ? row.c[2].v : 129.0532,
+                    purpose: row.c[3] ? row.c[3].v : '홍보',
+                    period: row.c[4] ? row.c[4].v : '8',
                     count: row.c[5] ? row.c[5].v : 1
                 }));
 
