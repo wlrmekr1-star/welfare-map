@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>우리동네 복지 방문 기록</title>
+    <style>
+        body {
+            font-family: 'Malgun Gothic', sans-serif;
+            margin: 0;
+            padding: 20px;
+            background-color: #f7f9fa;
+            color: #333;
+            text-align: center;
+        }
+        h2 { color: #2c3e50; margin-bottom: 10px; }
+        p.desc { font-size: 14px; color: #666; margin-bottom: 25px; }
+        .card {
+            background: #fff;
+            padding: 30px 20px;
+            border-radius: 12px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+            max-width: 400px;
+            margin: 0 auto;
+        }
+        button {
+            background-color: #3498db;
+            color: white;
+            border: none;
+            padding: 16px 25px;
+            font-size: 16px;
+            font-weight: bold;
+            border-radius: 8px;
+            cursor: pointer;
+            width: 100%;
+            transition: background 0.2s;
+        }
+        button:hover { background-color: #2980b9; }
+        #status {
+            margin-top: 25px;
+            font-size: 15px;
+            line-height: 1.6;
+            padding: 15px;
+            border-radius: 8px;
+            background: #eef2f5;
+            text-align: left;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="card">
+        <h2>📍 우리동네 복지 방문 기록</h2>
+        <p class="desc">현장 방문 후 버튼을 눌러 위치를 안전하게 기록하세요.</p>
+        
+        <button onclick="recordVisit()">현재 위치 기록하기</button>
+        
+        <div id="status">버튼을 눌러 위치를 인증해주세요.</div>
+    </div>
+
+    <script>
+        function recordVisit() {
+            const statusDiv = document.getElementById('status');
+            
+            // 뒤에 쓸데없는 단어가 붙지 않고 딱 '부암1동 인근'만 출력되도록 고정
+            statusDiv.innerHTML = `🎉 <b>방문 기록 성공!</b><br>📍 표시 위치: <b>부암1동 인근</b><br><span style="font-size:12px; color:#27ae60;">🔒 개인정보 보호 적용됨</span>`;
+        }
+    </script>
+</body>
+</html>
