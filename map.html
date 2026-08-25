@@ -154,7 +154,6 @@
         var options = { center: new kakao.maps.LatLng(35.1631, 129.0532), level: 5, minLevel: 3, maxLevel: 7 };
         var map = new kakao.maps.Map(container, options);
 
-        // 각 동별 정확한 중심 좌표와 대표 경계 범위 설정 (오차 없는 줌인용)
         const dongLocations = {
             "부전1동": {lat: 35.1585, lng: 129.0605}, "부전2동": {lat: 35.1542, lng: 129.0598},
             "연지동": {lat: 35.1740, lng: 129.0570}, "초읍동": {lat: 35.1805, lng: 129.0515},
@@ -180,7 +179,6 @@
         let activeCircles = [];
         let polygonOverlays = [];
 
-        // 깃허브에 올린 GeoJSON 안전 로드
         fetch('busanjin.geojson')
             .then(res => res.json())
             .then(data => {
@@ -194,13 +192,22 @@
             polygonOverlays = [];
         }
 
-        function drawGeoJsonPolygon(targetDongName) {
+        // 권역 또는 동 이름에 맞춰 다중 폴리곤 렌더링 지원
+        function drawGeoJsonPolygon(targetFilter, isRegion = false) {
             clearMapPolygons();
             if (!geojsonFeatureCollection) return;
 
+            var targetDongs = [];
+            if (isRegion) {
+                targetDongs = regionMap[targetFilter] || [];
+            } else if (targetFilter !== 'all') {
+                targetDongs = [targetFilter];
+            }
+
             geojsonFeatureCollection.features.forEach(feature => {
-                var dongName = feature.properties.ADM_NM;
-                if (targetDongName === 'all' || dongName === targetDongName) {
+                var dongName = String(feature.properties.ADM_NM || "").trim();
+                
+                if (targetFilter === 'all' || (isRegion && targetDongs.includes(dongName)) || (!isRegion && dongName === targetFilter)) {
                     var coordinates = feature.geometry.coordinates;
                     
                     coordinates.forEach(ring => {
@@ -208,11 +215,11 @@
                         
                         var polygon = new kakao.maps.Polygon({
                             path: path,
-                            strokeWeight: targetDongName === 'all' ? 2 : 3,
-                            strokeColor: targetDongName === 'all' ? '#27ae60' : '#e74c3c',
-                            strokeOpacity: 0.8,
-                            fillColor: targetDongName === 'all' ? '#27ae60' : '#e74c3c',
-                            fillOpacity: targetDongName === 'all' ? 0.05 : 0.3
+                            strokeWeight: isRegion ? 3 : 3,
+                            strokeColor: isRegion ? '#3498db' : '#e74c3c',
+                            strokeOpacity: 0.9,
+                            fillColor: isRegion ? '#3498db' : '#e74c3c',
+                            fillOpacity: isRegion ? 0.2 : 0.3
                         });
                         polygon.setMap(map);
                         polygonOverlays.push(polygon);
@@ -227,8 +234,7 @@
             clearMapPolygons();
 
             if (region !== 'all') {
-                var dongs = regionMap[region] || [];
-                dongs.forEach(dName => drawGeoJsonPolygon(dName));
+                drawGeoJsonPolygon(region, true); // 권역 모드로 다중 동 경계 표시
                 map.setCenter(new kakao.maps.LatLng(35.1631, 129.0532));
                 map.setLevel(5);
             } else {
@@ -244,10 +250,10 @@
             var dong = document.getElementById('dongFilter').value;
             
             if (dong !== 'all' && dongLocations[dong]) {
-                drawGeoJsonPolygon(dong);
+                drawGeoJsonPolygon(dong, false); // 단일 동 모드
                 var loc = dongLocations[dong];
                 map.setCenter(new kakao.maps.LatLng(loc.lat, loc.lng));
-                map.setLevel(3); // 해당 동으로 정확히 줌인
+                map.setLevel(3);
             } else {
                 drawGeoJsonPolygon('all');
                 map.setCenter(new kakao.maps.LatLng(35.1631, 129.0532));
