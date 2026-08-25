@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>복지 방문 데이터 통합 대시보드</title>
-    <!-- 카카오맵 웹 지도 API (https 스키마 명시 적용) -->
+    <!-- 카카오맵 웹 지도 API -->
     <script type="text/javascript" src="https://dapi.kakao.com/v2/maps/sdk.js?appkey=9821f83fe3895fe4e030aee5107a8990&libraries=services"></script>
     <style>
         body {
@@ -153,108 +153,114 @@
     <div id="map"></div>
 
     <script>
-        // 1. 지도 초기화 및 줌 제한
-        var container = document.getElementById('map');
-        var options = {
-            center: new kakao.maps.LatLng(35.1631, 129.0532), 
-            level: 5,
-            minLevel: 3,
-            maxLevel: 7
+        // 카카오맵 API 로드 확인 후 실행
+        window.onload = function() {
+            if (typeof kakao === 'undefined' || !kakao.maps) {
+                console.error("카카오맵 API가 로드되지 않았습니다. 앱 키 또는 도메인 설정을 확인해주세요.");
+                return;
+            }
+
+            // 1. 지도 초기화 및 줌 제한
+            var container = document.getElementById('map');
+            var options = {
+                center: new kakao.maps.LatLng(35.1631, 129.0532), 
+                level: 5,
+                minLevel: 3,
+                maxLevel: 7
+            };
+            var map = new kakao.maps.Map(container, options);
+
+            // 2. 부산진구 실제 다각형 경계선
+            var busanjinPath = [
+                new kakao.maps.LatLng(35.1850, 129.0350),
+                new kakao.maps.LatLng(35.1880, 129.0600),
+                new kakao.maps.LatLng(35.1750, 129.0820),
+                new kakao.maps.LatLng(35.1550, 129.0780),
+                new kakao.maps.LatLng(35.1350, 129.0620),
+                new kakao.maps.LatLng(35.1380, 129.0400),
+                new kakao.maps.LatLng(35.1520, 129.0150)
+            ];
+
+            var busanjinPolygon = new kakao.maps.Polygon({
+                path: busanjinPath,
+                strokeWeight: 3,
+                strokeColor: '#27ae60',
+                strokeOpacity: 0.8,
+                strokeStyle: 'solid',
+                fillColor: '#27ae60',
+                fillOpacity: 0.06
+            });
+            busanjinPolygon.setMap(map);
+
+            // 3. 실제 데이터 배열 (현재는 빈 상태)
+            window.allVisitData = [];
+            window.activeCircles = [];
+
+            window.clearMap = function() {
+                window.activeCircles.forEach(function(c) { c.setMap(null); });
+                window.activeCircles = [];
+            }
+
+            window.filterData = function() {
+                window.clearMap();
+
+                var selectedPeriod = document.getElementById('periodFilter').value;
+                var selectedPurpose = document.getElementById('purposeFilter').value;
+
+                var filtered = window.allVisitData.filter(function(item) {
+                    var matchPeriod = (item.period === selectedPeriod);
+                    var matchPurpose = (selectedPurpose === 'all' || item.purpose === selectedPurpose);
+                    return matchPeriod && matchPurpose;
+                });
+
+                var totalSum = filtered.reduce((sum, item) => sum + item.count, 0);
+                document.getElementById('totalCount').innerText = totalSum + " 건 (부산진구 전체)";
+
+                filtered.forEach(function(item) {
+                    var position = new kakao.maps.LatLng(item.lat, item.lng);
+
+                    var radiusSize, circleColor;
+                    if (item.count >= 50) {
+                        radiusSize = 220;
+                        circleColor = '#c0392b';
+                    } else if (item.count >= 10) {
+                        radiusSize = 160;
+                        circleColor = '#e67e22';
+                    } else {
+                        radiusSize = 110;
+                        circleColor = '#3498db';
+                    }
+
+                    var circle = new kakao.maps.Circle({
+                        center: position,
+                        radius: radiusSize, 
+                        strokeWeight: 2,
+                        strokeColor: circleColor,
+                        strokeOpacity: 0.9,
+                        fillColor: circleColor,
+                        fillOpacity: 0.45
+                    });
+
+                    circle.setMap(map);
+                    window.activeCircles.push(circle);
+
+                    var infowindow = new kakao.maps.InfoWindow({
+                        content: `<div style="padding:6px 10px; font-size:12px; font-weight:bold;">📍 ${item.title}<br>목적: ${item.purpose}<br>방문: ${item.count}회</div>`
+                    });
+
+                    kakao.maps.event.addListener(circle, 'mouseover', function() {
+                        infowindow.setPosition(position);
+                        infowindow.open(map);
+                    });
+
+                    kakao.maps.event.addListener(circle, 'mouseout', function() {
+                        infowindow.close();
+                    });
+                });
+            }
+
+            window.filterData();
         };
-        var map = new kakao.maps.Map(container, options);
-
-        // 2. 부산진구 실제 다각형 경계선
-        var busanjinPath = [
-            new kakao.maps.LatLng(35.1850, 129.0350),
-            new kakao.maps.LatLng(35.1880, 129.0600),
-            new kakao.maps.LatLng(35.1750, 129.0820),
-            new kakao.maps.LatLng(35.1550, 129.0780),
-            new kakao.maps.LatLng(35.1350, 129.0620),
-            new kakao.maps.LatLng(35.1380, 129.0400),
-            new kakao.maps.LatLng(35.1520, 129.0150)
-        ];
-
-        var busanjinPolygon = new kakao.maps.Polygon({
-            path: busanjinPath,
-            strokeWeight: 3,
-            strokeColor: '#27ae60',
-            strokeOpacity: 0.8,
-            strokeStyle: 'solid',
-            fillColor: '#27ae60',
-            fillOpacity: 0.06
-        });
-        busanjinPolygon.setMap(map);
-
-        // 3. 실제 데이터 배열 (현재는 빈 상태)
-        var allVisitData = [];
-
-        var activeCircles = [];
-
-        function clearMap() {
-            activeCircles.forEach(function(c) { c.setMap(null); });
-            activeCircles = [];
-        }
-
-        function filterData() {
-            clearMap();
-
-            var selectedPeriod = document.getElementById('periodFilter').value;
-            var selectedPurpose = document.getElementById('purposeFilter').value;
-
-            var filtered = allVisitData.filter(function(item) {
-                var matchPeriod = (item.period === selectedPeriod);
-                var matchPurpose = (selectedPurpose === 'all' || item.purpose === selectedPurpose);
-                return matchPeriod && matchPurpose;
-            });
-
-            // 총 방문 건수 업데이트
-            var totalSum = filtered.reduce((sum, item) => sum + item.count, 0);
-            document.getElementById('totalCount').innerText = totalSum + " 건 (부산진구 전체)";
-
-            filtered.forEach(function(item) {
-                var position = new kakao.maps.LatLng(item.lat, item.lng);
-
-                var radiusSize, circleColor;
-                if (item.count >= 50) {
-                    radiusSize = 220;
-                    circleColor = '#c0392b';
-                } else if (item.count >= 10) {
-                    radiusSize = 160;
-                    circleColor = '#e67e22';
-                } else {
-                    radiusSize = 110;
-                    circleColor = '#3498db';
-                }
-
-                var circle = new kakao.maps.Circle({
-                    center: position,
-                    radius: radiusSize, 
-                    strokeWeight: 2,
-                    strokeColor: circleColor,
-                    strokeOpacity: 0.9,
-                    fillColor: circleColor,
-                    fillOpacity: 0.45
-                });
-
-                circle.setMap(map);
-                activeCircles.push(circle);
-
-                var infowindow = new kakao.maps.InfoWindow({
-                    content: `<div style="padding:6px 10px; font-size:12px; font-weight:bold;">📍 ${item.title}<br>목적: ${item.purpose}<br>방문: ${item.count}회</div>`
-                });
-
-                kakao.maps.event.addListener(circle, 'mouseover', function() {
-                    infowindow.setPosition(position);
-                    infowindow.open(map);
-                });
-
-                kakao.maps.event.addListener(circle, 'mouseout', function() {
-                    infowindow.close();
-                });
-            });
-        }
-
-        filterData();
     </script>
 </body>
 </html>
