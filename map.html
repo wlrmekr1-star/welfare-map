@@ -3,79 +3,144 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>복지 방문 데이터 통합 대시보드</title>
+    <title>복지 방문 인증 및 대시보드</title>
     <script type="text/javascript" src="https://dapi.kakao.com/v2/maps/sdk.js?appkey=9821f83fe3895fe4e030aee5107a8990&libraries=services"></script>
     <style>
-        body { font-family: 'Malgun Gothic', sans-serif; margin: 0; padding: 0; display: flex; height: 100vh; background: #f0f2f5; }
-        #sidebar { width: 360px; background: #ffffff; box-shadow: 2px 0 10px rgba(0,0,0,0.1); padding: 20px; box-sizing: border-box; display: flex; flex-direction: column; z-index: 10; overflow-y: auto; }
-        h2 { font-size: 20px; color: #2c3e50; margin-top: 0; }
-        .stats-box { background: #eef2f7; padding: 12px 15px; border-radius: 8px; margin-bottom: 12px; }
-        .stats-box h3 { margin: 0 0 6px 0; font-size: 13px; color: #555; }
-        .stats-box p { margin: 0; font-size: 16px; font-weight: bold; color: #2980b9; }
-        .filter-section { background: #fdfefe; border: 1px solid #dcdde1; padding: 12px; border-radius: 8px; margin-bottom: 12px; }
-        .filter-section h4 { margin: 0 0 6px 0; font-size: 13px; color: #2c3e50; }
-        .filter-section select { width: 100%; padding: 8px; border-radius: 6px; border: 1px solid #bdc3c7; font-size: 13px; box-sizing: border-box; }
-        .legend-box { background: #fff; border: 1px solid #ddd; padding: 12px; border-radius: 8px; margin-bottom: 12px; }
-        .legend-box h4 { margin: 0 0 8px 0; font-size: 13px; color: #333; }
-        .legend-item { display: flex; align-items: center; font-size: 12px; margin-bottom: 6px; color: #555; }
-        .color-dot { width: 14px; height: 14px; border-radius: 50%; display: inline-block; margin-right: 8px; }
+        body { font-family: 'Malgun Gothic', sans-serif; margin: 0; padding: 0; display: flex; flex-direction: column; height: 100vh; background: #f0f2f5; }
+        
+        /* 상단 어플 스타일 탭 메뉴 */
+        #tab-bar { display: flex; background: #2c3e50; color: white; height: 55px; flex-shrink: 0; z-index: 20; }
+        .tab-btn { flex: 1; border: none; background: none; color: #bdc3c7; font-size: 16px; font-weight: bold; cursor: pointer; transition: 0.2s; }
+        .tab-btn.active { background: #27ae60; color: white; border-bottom: 4px solid #1e8449; }
+
+        /* 컨텐츠 영역 (탭 전환용) */
+        .tab-content { display: none; flex-grow: 1; height: calc(100vh - 55px); position: relative; overflow: hidden; }
+        .tab-content.active { display: flex; }
+
+        /* 1번 탭: 지도 보기 화면 (PC에서는 좌우 분할, 모바일에서는 상하 분할 가능) */
+        #map-view { display: flex; flex-direction: row; }
+        @media(max-width: 768px) { #map-view { flex-direction: column; } }
+        
+        #sidebar { width: 360px; background: #ffffff; padding: 15px; box-sizing: border-box; overflow-y: auto; flex-shrink: 0; z-index: 10; box-shadow: 2px 0 10px rgba(0,0,0,0.1); }
+        @media(max-width: 768px) { #sidebar { width: 100%; height: 45%; } }
+        
         #map { flex-grow: 1; height: 100%; }
-        .info-desc { font-size: 12px; color: #666; margin-top: auto; line-height: 1.4; }
+        @media(max-width: 768px) { #map { height: 55%; } }
+
+        /* 2번 탭: 방문 인증 화면 */
+        #auth-view { justify-content: center; align-items: center; background: #f0f2f5; padding: 20px; box-sizing: border-box; overflow-y: auto; }
+        .card { background: #fff; padding: 25px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); width: 100%; max-width: 400px; box-sizing: border-box; }
+        h2 { color: #2c3e50; text-align: center; margin-top: 0; }
+        label { display: block; margin-top: 18px; font-weight: bold; font-size: 15px; color: #333; }
+        select { width: 100%; padding: 12px; margin-top: 8px; border-radius: 6px; border: 1px solid #ccc; font-size: 15px; box-sizing: border-box; background: #fff; }
+        .info-msg { font-size: 13px; color: #2980b9; margin-top: 15px; text-align: center; background: #eef2f7; padding: 12px; border-radius: 6px; font-weight: bold; }
+        button[type="submit"] { width: 100%; background: #27ae60; color: white; border: none; padding: 15px; border-radius: 6px; font-size: 16px; font-weight: bold; margin-top: 20px; cursor: pointer; }
+        button[type="submit"]:hover { background: #219653; }
+
+        /* 사이드바 UI 요소 스타일 */
+        .stats-box { background: #eef2f7; padding: 12px; border-radius: 8px; margin-bottom: 10px; }
+        .stats-box h3 { margin: 0 0 4px 0; font-size: 12px; color: #555; }
+        .stats-box p { margin: 0; font-size: 16px; font-weight: bold; color: #2980b9; }
+        .filter-section { background: #fdfefe; border: 1px solid #dcdde1; padding: 10px; border-radius: 8px; margin-bottom: 10px; }
+        .filter-section h4 { margin: 0 0 4px 0; font-size: 12px; color: #2c3e50; }
+        .filter-section select { width: 100%; padding: 6px; border-radius: 6px; border: 1px solid #bdc3c7; font-size: 12px; }
+        .legend-box { background: #fff; border: 1px solid #ddd; padding: 10px; border-radius: 8px; }
+        .legend-box h4 { margin: 0 0 6px 0; font-size: 12px; color: #333; }
+        .legend-item { display: flex; align-items: center; font-size: 11px; margin-bottom: 4px; color: #555; }
+        .color-dot { width: 12px; height: 12px; border-radius: 50%; display: inline-block; margin-right: 6px; }
     </style>
 </head>
 <body>
 
-    <div id="sidebar">
-        <h2>📊 기관별 방문 분석</h2>
-        <div class="stats-box">
-            <h3>총 방문 건수</h3>
-            <p id="totalCount">0 건 (부산진구 전체)</p>
-        </div>
+    <!-- 상단 어플형 탭바 -->
+    <div id="tab-bar">
+        <button class="tab-btn active" onclick="switchTab('map-view', this)">🗺️ 지도 대시보드</button>
+        <button class="tab-btn" onclick="switchTab('auth-view', this)">📍 현장 방문 인증</button>
+    </div>
 
-        <div class="filter-section">
-            <h4>📅 기간별 조회</h4>
-            <select id="periodFilter" onchange="filterData()">
-                <option value="year">연간 통합 보기 (전체)</option>
-                <option value="1">1월</option>
-                <option value="2">2월</option>
-                <option value="3">3월</option>
-                <option value="4">4월</option>
-                <option value="5">5월</option>
-                <option value="6">6월</option>
-                <option value="7">7월</option>
-                <option value="8">8월</option>
-                <option value="9">9월</option>
-                <option value="10">10월</option>
-                <option value="11">11월</option>
-                <option value="12">12월</option>
-            </select>
-        </div>
+    <!-- 1번 탭: 지도 및 분석 화면 -->
+    <div id="map-view" class="tab-content active">
+        <div id="sidebar">
+            <h2>📊 방문 분석</h2>
+            <div class="stats-box">
+                <h3>총 방문 건수</h3>
+                <p id="totalCount">0 건 (부산진구 전체)</p>
+            </div>
 
-        <div class="filter-section">
-            <h4>🎯 방문 목적별 필터</h4>
-            <select id="purposeFilter" onchange="filterData()">
-                <option value="all">전체 목적 보기</option>
-                <option value="홍보">홍보</option>
-                <option value="사각지대발굴 활동">사각지대발굴 활동</option>
-                <option value="사례관리(방문)">사례관리(방문)</option>
-            </select>
-        </div>
+            <div class="filter-section">
+                <h4>📅 기간별 조회</h4>
+                <select id="periodFilter" onchange="filterData()">
+                    <option value="year">연간 통합 보기 (전체)</option>
+                    <option value="1">1월</option>
+                    <option value="2">2월</option>
+                    <option value="3">3월</option>
+                    <option value="4">4월</option>
+                    <option value="5">5월</option>
+                    <option value="6">6월</option>
+                    <option value="7">7월</option>
+                    <option value="8">8월</option>
+                    <option value="9">9월</option>
+                    <option value="10">10월</option>
+                    <option value="11">11월</option>
+                    <option value="12">12월</option>
+                </select>
+            </div>
 
-        <div class="legend-box">
-            <h4>🗺️ 방문 횟수별 구역 색상</h4>
-            <div class="legend-item"><span class="color-dot" style="background: #c0392b;"></span><span><b>50회 이상</b> (초집중 관리 지역)</span></div>
-            <div class="legend-item"><span class="color-dot" style="background: #e67e22;"></span><span><b>10회 ~ 30회</b> (중점 방문 지역)</span></div>
-            <div class="legend-item"><span class="color-dot" style="background: #3498db;"></span><span><b>1회 ~ 10회</b> (기본 방문 / 관심 지역)</span></div>
-        </div>
+            <div class="filter-section">
+                <h4>🎯 방문 목적별 필터</h4>
+                <select id="purposeFilter" onchange="filterData()">
+                    <option value="all">전체 목적 보기</option>
+                    <option value="홍보">홍보</option>
+                    <option value="사각지대발굴 활동">사각지대발굴 활동</option>
+                    <option value="사례관리(방문)">사례관리(방문)</option>
+                </select>
+            </div>
 
-        <div class="info-desc">
-            💡 <b>안내:</b> 구글 시트 데이터가 실시간 연동되어 지도에 표시됩니다.
+            <div class="legend-box">
+                <h4>🗺️ 방문 횟수별 구역 색상</h4>
+                <div class="legend-item"><span class="color-dot" style="background: #c0392b;"></span><span><b>50회 이상</b> (초집중 관리)</span></div>
+                <div class="legend-item"><span class="color-dot" style="background: #e67e22;"></span><span><b>10회~30회</b> (중점 방문)</span></div>
+                <div class="legend-item"><span class="color-dot" style="background: #3498db;"></span><span><b>1회~10회</b> (기본 방문)</span></div>
+            </div>
+        </div>
+        <div id="map"></div>
+    </div>
+
+    <!-- 2번 탭: 인증 입력 화면 -->
+    <div id="auth-view" class="tab-content">
+        <div class="card">
+            <h2>📍 복지 방문 인증</h2>
+            <form id="visitForm">
+                <label>🎯 방문 목적 선택</label>
+                <select id="purpose">
+                    <option value="홍보">홍보</option>
+                    <option value="사각지대발굴 활동">사각지대발굴 활동</option>
+                    <option value="사례관리(방문)">사례관리(방문)</option>
+                </select>
+
+                <div class="info-msg">💡 전송 버튼을 누르면 현재 위치가 자동으로 기록됩니다.</div>
+
+                <button type="submit" id="submitBtn">인증 데이터 전송하기</button>
+            </form>
         </div>
     </div>
 
-    <div id="map"></div>
-
     <script>
+        // 탭 전환 함수
+        function switchTab(tabId, btn) {
+            document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
+            document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
+            
+            document.getElementById(tabId).classList.add('active');
+            btn.classList.add('active');
+
+            // 지도가 숨겨져 있다가 보일 때 깨지는 현상 방지
+            if(tabId === 'map-view' && map) {
+                setTimeout(() => { map.relayout(); }, 100);
+            }
+        }
+
+        // 카카오맵 초기화
         var container = document.getElementById('map');
         var options = {
             center: new kakao.maps.LatLng(35.1631, 129.0532), 
@@ -85,6 +150,7 @@
         };
         var map = new kakao.maps.Map(container, options);
 
+        // 부산진구 경계선 폴리곤
         var busanjinPath = [
             new kakao.maps.LatLng(35.1850, 129.0350),
             new kakao.maps.LatLng(35.1880, 129.0600),
@@ -155,27 +221,86 @@
             });
         }
 
+        // 구글 시트 데이터 로드
         const sheetId = '1Qcqw-8UQPIVtgZLrpE3cD8qXH97qbHG9YL1Ww0GcJZQ';
         const url = `https://docs.google.com/spreadsheets/d/${sheetId}/gviz/tq?tqx=out:json`;
 
-        fetch(url)
-            .then(res => res.text())
-            .then(text => {
-                const json = JSON.parse(text.substring(47).slice(0, -2));
-                const rows = json.table.rows;
+        function loadSheetData() {
+            fetch(url)
+                .then(res => res.text())
+                .then(text => {
+                    const json = JSON.parse(text.substring(47).slice(0, -2));
+                    const rows = json.table.rows;
 
-                allVisitData = rows.map(row => ({
-                    title: (row.c[0] && row.c[0].v) ? row.c[0].v : '현장 방문',
-                    lat: (row.c[1] && row.c[1].v) ? row.c[1].v : 35.1631,
-                    lng: (row.c[2] && row.c[2].v) ? row.c[2].v : 129.0532,
-                    purpose: (row.c[3] && row.c[3].v) ? row.c[3].v : '홍보',
-                    period: (row.c[4] && row.c[4].v) ? row.c[4].v : '8',
-                    count: (row.c[5] && row.c[5].v) ? row.c[5].v : 1
-                }));
+                    allVisitData = rows.map(row => ({
+                        title: (row.c[0] && row.c[0].v) ? row.c[0].v : '현장 방문',
+                        lat: (row.c[1] && row.c[1].v) ? row.c[1].v : 35.1631,
+                        lng: (row.c[2] && row.c[2].v) ? row.c[2].v : 129.0532,
+                        purpose: (row.c[3] && row.c[3].v) ? row.c[3].v : '홍보',
+                        period: (row.c[4] && row.c[4].v) ? row.c[4].v : '8',
+                        count: (row.c[5] && row.c[5].v) ? row.c[5].v : 1
+                    }));
 
-                filterData();
-            })
-            .catch(err => console.error("구글 시트 데이터 로드 실패:", err));
+                    filterData();
+                })
+                .catch(err => console.error("구글 시트 데이터 로드 실패:", err));
+        }
+
+        loadSheetData();
+
+        // 방문 인증 전송 로직
+        const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbw2XwMqXTalERQxGKaNUPjoL6pB3AZkzRn6VWZ9IGsKVneCvpiRKQHdN9QRIjvE89I/exec";
+
+        document.getElementById('visitForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            const btn = document.getElementById('submitBtn');
+            btn.innerText = "위치 확인 및 전송 중...";
+            btn.disabled = true;
+
+            const currentMonth = String(new Date().getMonth() + 1);
+
+            if (navigator.geolocation) {
+                navigator.geolocation.getCurrentPosition(function(position) {
+                    sendData(position.coords.latitude, position.coords.longitude, currentMonth);
+                }, function(error) {
+                    sendData(35.1631, 129.0532, currentMonth);
+                }, { enableHighAccuracy: true, timeout: 6000, maximumAge: 0 });
+            } else {
+                sendData(35.1631, 129.0532, currentMonth);
+            }
+        });
+
+        function sendData(lat, lng, period) {
+            const data = {
+                title: "현장 방문",
+                lat: lat,
+                lng: lng,
+                purpose: document.getElementById('purpose').value,
+                period: period,
+                count: 1
+            };
+
+            fetch(SCRIPT_URL, {
+                method: 'POST',
+                mode: 'no-cors',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(data)
+            }).then(() => {
+                alert('방문 인증이 성공적으로 완료되었습니다!');
+                const btn = document.getElementById('submitBtn');
+                btn.innerText = "인증 데이터 전송하기";
+                btn.disabled = false;
+                document.getElementById('visitForm').reset();
+                
+                // 전송 후 자동으로 시트 데이터를 다시 불러와서 지도에 즉시 반영
+                setTimeout(loadSheetData, 1500);
+            }).catch(error => {
+                alert('전송 실패: ' + error);
+                const btn = document.getElementById('submitBtn');
+                btn.innerText = "인증 데이터 전송하기";
+                btn.disabled = false;
+            });
+        }
     </script>
 </body>
 </html>
