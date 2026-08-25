@@ -8,7 +8,7 @@
     <style>
         body { font-family: 'Malgun Gothic', sans-serif; margin: 0; padding: 0; display: flex; height: 100vh; background: #f0f2f5; overflow: hidden; }
         
-        /* 왼쪽 제미나이 스타일 사이드바 메뉴 */
+        /* 왼쪽 제미나이 스타일 메뉴바 */
         #left-menu { width: 260px; background: #1e1e2f; color: #fff; display: flex; flex-direction: column; flex-shrink: 0; box-shadow: 2px 0 10px rgba(0,0,0,0.1); z-index: 20; }
         .menu-header { padding: 20px; font-size: 18px; font-weight: bold; border-bottom: 1px solid #2d2d44; color: #ecf0f1; }
         .menu-list { display: flex; flex-direction: column; padding: 15px 10px; gap: 8px; }
@@ -16,18 +16,18 @@
         .menu-btn:hover { background: #2a2a40; color: #fff; }
         .menu-btn.active { background: #27ae60; color: #fff; }
 
-        /* 메인 컨텐츠 영역 (탭 전환용) */
+        /* 메인 컨텐츠 영역 (겹침 방지 수정 완료) */
         .main-container { flex-grow: 1; height: 100vh; position: relative; background: #f0f2f5; overflow: hidden; }
-        .tab-pane { display: none; width: 100%; height: 100%; position: absolute; top: 0; left: 0; box-sizing: border-box; }
+        .tab-pane { display: none; width: 100%; height: 100%; position: absolute; top: 0; left: 0; box-sizing: border-box; background: #f0f2f5; }
         .tab-pane.active { display: flex; }
 
-        /* 1번 탭: 지도 대시보드 화면 (지도 + 내부 분석 패널) */
+        /* 1번 탭: 지도 대시보드 화면 */
         #dash-pane { display: flex; }
         #dash-sidebar { width: 340px; background: #ffffff; padding: 20px; box-sizing: border-box; overflow-y: auto; flex-shrink: 0; z-index: 10; box-shadow: 2px 0 10px rgba(0,0,0,0.05); }
         #map { flex-grow: 1; height: 100%; }
 
-        /* 2번 탭: 현장 방문 인증 화면 (중앙 정렬 카드) */
-        #auth-pane { justify-content: center; align-items: center; background: #f0f2f5; padding: 20px; box-sizing: border-box; overflow-y: auto; }
+        /* 2번 탭: 현장 방문 인증 화면 */
+        #auth-pane { justify-content: center; align-items: center; padding: 20px; z-index: 30; }
         .card { background: #fff; padding: 30px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.08); width: 100%; max-width: 420px; box-sizing: border-box; }
         h2 { color: #2c3e50; text-align: center; margin-top: 0; }
         label { display: block; margin-top: 18px; font-weight: bold; font-size: 15px; color: #333; }
@@ -47,19 +47,6 @@
         .legend-box h4 { margin: 0 0 8px 0; font-size: 12px; color: #333; }
         .legend-item { display: flex; align-items: center; font-size: 11px; margin-bottom: 6px; color: #555; }
         .color-dot { width: 12px; height: 12px; border-radius: 50%; display: inline-block; margin-right: 6px; }
-
-        /* 모바일 대응 반응형 디자인 */
-        @media(max-width: 768px) {
-            body { flex-direction: column; overflow: auto; height: auto; }
-            #left-menu { width: 100%; height: auto; flex-direction: row; align-items: center; justify-content: space-between; padding: 10px 15px; }
-            .menu-header { border-bottom: none; padding: 0; font-size: 15px; }
-            .menu-list { flex-direction: row; padding: 0; gap: 5px; }
-            .menu-btn { padding: 8px 12px; font-size: 13px; width: auto; justify-content: center; }
-            .main-container { height: calc(100vh - 60px); position: relative; }
-            #dash-pane { flex-direction: column; }
-            #dash-sidebar { width: 100%; height: 40%; }
-            #map { height: 60%; }
-        }
     </style>
 </head>
 <body>
@@ -83,6 +70,46 @@
                 <div class="stats-box">
                     <h3>총 방문 건수</h3>
                     <p id="totalCount">0 건 (부산진구 전체)</p>
+                </div>
+
+                <!-- 권역별 필터 추가 -->
+                <div class="filter-section">
+                    <h4>🌐 권역별 조회</h4>
+                    <select id="regionFilter" onchange="filterData()">
+                        <option value="all">전체 권역 보기</option>
+                        <option value="1권역">1권역 (부전1·연지·초읍·양정1·2동)</option>
+                        <option value="2권역">2권역 (부전2·전포1·2·범천1·2동)</option>
+                        <option value="3권역">3권역 (당감1·2·4·부암1·3동)</option>
+                        <option value="4권역">4권역 (가야2·개금1·2·3동)</option>
+                    </select>
+                </div>
+
+                <!-- 동별 필터 추가 (20개 동) -->
+                <div class="filter-section">
+                    <h4>🏠 동별 조회</h4>
+                    <select id="dongFilter" onchange="filterData()">
+                        <option value="all">전체 동 보기</option>
+                        <option value="부전1동">부전1동</option>
+                        <option value="부전2동">부전2동</option>
+                        <option value="연지동">연지동</option>
+                        <option value="초읍동">초읍동</option>
+                        <option value="양정1동">양정1동</option>
+                        <option value="양정2동">양정2동</option>
+                        <option value="전포1동">전포1동</option>
+                        <option value="전포2동">전포2동</option>
+                        <option value="부암1동">부암1동</option>
+                        <option value="부암3동">부암3동</option>
+                        <option value="당감1동">당감1동</option>
+                        <option value="당감2동">당감2동</option>
+                        <option value="당감4동">당감4동</option>
+                        <option value="가야1동">가야1동</option>
+                        <option value="가야2동">가야2동</option>
+                        <option value="개금1동">개금1동</option>
+                        <option value="개금2동">개금2동</option>
+                        <option value="개금3동">개금3동</option>
+                        <option value="범천1동">범천1동</option>
+                        <option value="범천2동">범천2동</option>
+                    </select>
                 </div>
 
                 <div class="filter-section">
@@ -142,11 +169,8 @@
                 </form>
             </div>
         </div>
-
-    </div>
-
-    <script>
-        // 좌측 메뉴 탭 전환 함수
+    </div><script>
+        // 좌측 메뉴 탭 전환 함수 (겹침 오류 완벽 해결)
         function switchTab(paneId, btn) {
             document.querySelectorAll('.tab-pane').forEach(el => el.classList.remove('active'));
             document.querySelectorAll('.menu-btn').forEach(el => el.classList.remove('active'));
@@ -154,7 +178,6 @@
             document.getElementById(paneId).classList.add('active');
             btn.classList.add('active');
 
-            // 지도가 숨겨져 있다가 나타날 때 크기 깨짐 방지
             if(paneId === 'dash-pane' && map) {
                 setTimeout(() => { map.relayout(); }, 100);
             }
@@ -170,7 +193,6 @@
         };
         var map = new kakao.maps.Map(container, options);
 
-        // 부산진구 경계선 폴리곤
         var busanjinPath = [
             new kakao.maps.LatLng(35.1850, 129.0350),
             new kakao.maps.LatLng(35.1880, 129.0600),
@@ -198,19 +220,45 @@
             activeCircles = [];
         }
 
+        // 권역별 동 매핑 정의
+        const regionMap = {
+            "1권역": ["부전1동", "연지동", "초읍동", "양정1동", "양정2동"],
+            "2권역": ["부전2동", "전포1동", "전포2동", "범천1동", "범천2동"],
+            "3권역": ["당감1동", "당감2동", "당감4동", "부암1동", "부암3동"],
+            "4권역": ["가야2동", "개금1동", "개금2동", "개금3동"]
+        };
+
         function filterData() {
             clearMap();
+            var selectedRegion = document.getElementById('regionFilter').value;
+            var selectedDong = document.getElementById('dongFilter').value;
             var selectedPeriod = document.getElementById('periodFilter').value;
             var selectedPurpose = document.getElementById('purposeFilter').value;
 
             var filtered = allVisitData.filter(item => {
+                var itemDong = String(item.dong || "").trim();
+                
+                // 권역 필터 체크
+                var matchRegion = true;
+                if (selectedRegion !== 'all') {
+                    var allowedDongs = regionMap[selectedRegion] || [];
+                    matchRegion = allowedDongs.includes(itemDong);
+                }
+
+                // 동별 필터 체크
+                var matchDong = (selectedDong === 'all' || itemDong === selectedDong);
+                
+                // 기간 필터 체크
                 var matchPeriod = (selectedPeriod === 'year' || String(item.period).trim() === String(selectedPeriod));
+                
+                // 목적 필터 체크
                 var matchPurpose = (selectedPurpose === 'all' || String(item.purpose).trim() === String(selectedPurpose));
-                return matchPeriod && matchPurpose;
+
+                return matchRegion && matchDong && matchPeriod && matchPurpose;
             });
 
             var totalSum = filtered.reduce((sum, item) => sum + Number(item.count || 1), 0);
-            document.getElementById('totalCount').innerText = totalSum + " 건 (부산진구 전체)";
+            document.getElementById('totalCount').innerText = totalSum + " 건 (선택 지역)";
 
             filtered.forEach(item => {
                 var position = new kakao.maps.LatLng(Number(item.lat), Number(item.lng));
@@ -233,7 +281,7 @@
                 activeCircles.push(circle);
 
                 var infowindow = new kakao.maps.InfoWindow({
-                    content: '<div style="padding:6px 10px; font-size:12px; font-weight:bold;">📍 ' + (item.title || '현장 방문') + '<br>목적: ' + item.purpose + '<br>방문: ' + cnt + '회</div>'
+                    content: '<div style="padding:6px 10px; font-size:12px; font-weight:bold;">📍 ' + (item.title || '현장 방문') + '<br>동: ' + (item.dong || '미지정') + '<br>목적: ' + item.purpose + '<br>방문: ' + cnt + '회</div>'
                 });
 
                 kakao.maps.event.addListener(circle, 'mouseover', () => infowindow.setPosition(position) || infowindow.open(map, circle));
@@ -241,7 +289,7 @@
             });
         }
 
-        // 구글 시트 데이터 로드
+        // 구글 시트 데이터 로드 (dong 정보 추가 연동)
         const sheetId = '1Qcqw-8UQPIVtgZLrpE3cD8qXH97qbHG9YL1Ww0GcJZQ';
         const url = `https://docs.google.com/spreadsheets/d/${sheetId}/gviz/tq?tqx=out:json`;
 
@@ -258,7 +306,8 @@
                         lng: (row.c[2] && row.c[2].v) ? row.c[2].v : 129.0532,
                         purpose: (row.c[3] && row.c[3].v) ? row.c[3].v : '홍보',
                         period: (row.c[4] && row.c[4].v) ? row.c[4].v : '8',
-                        count: (row.c[5] && row.c[5].v) ? row.c[5].v : 1
+                        count: (row.c[5] && row.c[5].v) ? row.c[5].v : 1,
+                        dong: (row.c[6] && row.c[6].v) ? row.c[6].v : '부전1동' // G열 동 정보 매핑
                     }));
 
                     filterData();
@@ -297,7 +346,8 @@
                 lng: lng,
                 purpose: document.getElementById('purpose').value,
                 period: period,
-                count: 1
+                count: 1,
+                dong: "부전1동" // 기본 동 (추후 위치 기반 동 자동 판별 연동 가능)
             };
 
             fetch(SCRIPT_URL, {
@@ -312,7 +362,6 @@
                 btn.disabled = false;
                 document.getElementById('visitForm').reset();
                 
-                // 전송 후 데이터 자동 갱신
                 setTimeout(loadSheetData, 1500);
             }).catch(error => {
                 alert('전송 실패: ' + error);
