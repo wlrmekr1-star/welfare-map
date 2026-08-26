@@ -42,6 +42,21 @@
         .legend-box h4 { margin: 0 0 8px 0; font-size: 12px; color: #333; }
         .legend-item { display: flex; align-items: center; font-size: 11px; margin-bottom: 6px; color: #555; }
         .color-dot { width: 12px; height: 12px; border-radius: 50%; display: inline-block; margin-right: 6px; }
+
+        /* 지도 위 동 이름 표시용 라벨 스타일 */
+        .area-label {
+            background-color: rgba(255, 255, 255, 0.85);
+            border: 1px solid #bdc3c7;
+            border-radius: 4px;
+            color: #2c3e50;
+            font-size: 12px;
+            font-weight: bold;
+            padding: 3px 6px;
+            text-align: center;
+            white-space: nowrap;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+            pointer-events: none;
+        }
     </style>
 </head>
 <body>
@@ -151,7 +166,7 @@
         }
 
         var container = document.getElementById('map');
-        var options = { center: new kakao.maps.LatLng(35.1631, 129.0532), level: 6, minLevel: 3, maxLevel: 8 };
+        var options = { center: new kakao.maps.LatLng(35.1631, 129.0532), level: 6, minLevel: 4, maxLevel: 8 };
         var map = new kakao.maps.Map(container, options);
 
         const regionMap = {
@@ -165,6 +180,7 @@
         let allVisitData = [];
         let activeCircles = [];
         let polygonOverlays = [];
+        let labelOverlays = [];
 
         // GeoJSON 로드 후 지도 그리기 및 데이터 연동 실행
         fetch('busanjin.geojson')
@@ -172,13 +188,25 @@
             .then(data => {
                 geojsonFeatureCollection = data;
                 drawPolygons('all');
-                loadSheetData(); // GeoJSON이 로드된 후 시트 데이터 불러오기
+                loadSheetData();
             })
             .catch(err => console.error("GeoJSON 로드 실패:", err));
 
         function clearMapPolygons() {
             polygonOverlays.forEach(p => p.setMap(null));
             polygonOverlays = [];
+            labelOverlays.forEach(l => l.setMap(null));
+            labelOverlays = [];
+        }
+
+        // 폴리곤 중심 좌표를 계산하는 함수
+        function getPolygonCenter(path) {
+            let latSum = 0, lngSum = 0;
+            path.forEach(coord => {
+                latSum += coord.getLat();
+                lngSum += coord.getLng();
+            });
+            return new kakao.maps.LatLng(latSum / path.length, lngSum / path.length);
         }
 
         function drawPolygons(targetFilter, isRegion = false) {
@@ -192,10 +220,14 @@
                 targetDongs = [targetFilter];
             }
 
+            var bounds = new kakao.maps.LatLngBounds(); // 자동 줌/이동을 위한 영역 객체
+            var hasBounds = false;
+
             geojsonFeatureCollection.features.forEach(feature => {
                 var dongName = String(feature.properties.ADM_NM || "").trim();
+                var isActive = (targetFilter === 'all' || (isRegion && targetDongs.includes(dongName)) || (!isRegion && dongName === targetFilter));
                 
-                if (targetFilter === 'all' || (isRegion && targetDongs.includes(dongName)) || (!isRegion && dongName === targetFilter)) {
+                if (isActive || targetFilter !== 'all') { // 전체 보기가 아니어도 다른 동들은 옅게 깔아두기
                     var coordinates = feature.geometry.coordinates;
                     
                     coordinates.forEach(ring => {
@@ -204,35 +236,62 @@
                         var isAll = (targetFilter === 'all');
                         var polygon = new kakao.maps.Polygon({
                             path: path,
-                            strokeWeight: isAll ? 2 : 3,
-                            strokeColor: isAll ? '#27ae60' : (isRegion ? '#3498db' : '#e74c3c'),
-                            strokeOpacity: 0.8,
-                            fillColor: isAll ? '#27ae60' : (isRegion ? '#3498db' : '#e74c3c'),
-                            fillOpacity: isAll ? 0.05 : 0.25
+                            strokeWeight: isActive ? (isAll ? 2 : 3) : 1,
+                            strokeColor: isActive ? (isAll ? '#27ae60' : (isRegion ? '#3498db' : '#e74c3c')) : '#bdc3c7',
+                            strokeOpacity: isActive ? 0.8 : 0.3,
+                            fillColor: isActive ? (isAll ? '#27ae60' : (isRegion ? '#3498db' : '#e74c3c')) : '#ecf0f1',
+                            fillOpacity: isActive ? (isAll ? 0.03 : 0.25) : 0.0
                         });
                         polygon.setMap(map);
                         polygonOverlays.push(polygon);
 
-                        // 지도에서 동 영역을 직접 클릭했을 때 해당 동이 선택되도록 이벤트 추가
+                        // 활성화된 구역은 Bounds에 추가하여 나중에 카메라를 맞출 수 있게 함
+                        if (isActive && targetFilter !== 'all') {
+                            path.forEach(coord => bounds.extend(coord));
+                            hasBounds = true;
+                        }
+
+                        // 지도에 동 이름 라벨 띄우기
+                        var centerCoord = getPolygonCenter(path);
+                        var customOverlay = new kakao.maps.CustomOverlay({
+                            position: centerCoord,
+                            content: `<div class="area-label">${dongName}</div>`,
+                            yAnchor: 0.5
+                        });
+                        customOverlay.setMap(map);
+                        labelOverlays.push(customOverlay);
+
+                        // 폴리곤 클릭 이벤트 (토글 기능 적용)
                         kakao.maps.event.addListener(polygon, 'click', function() {
-                            document.getElementById('regionFilter').value = 'all';
-                            document.getElementById('dongFilter').value = dongName;
-                            onDongChange();
+                            var currentFilter = document.getElementById('dongFilter').value;
+                            if (currentFilter === dongName) {
+                                // 이미 선택된 동을 다시 클릭하면 전체 보기로 리셋
+                                document.getElementById('regionFilter').value = 'all';
+                                document.getElementById('dongFilter').value = 'all';
+                                onDongChange();
+                            } else {
+                                // 다른 동 클릭 시 해당 동 선택
+                                document.getElementById('regionFilter').value = 'all';
+                                document.getElementById('dongFilter').value = dongName;
+                                onDongChange();
+                            }
                         });
                     });
                 }
             });
+
+            // 특정 구역 선택 시 해당 구역이 한눈에 들어오도록 줌/이동 처리
+            if (targetFilter !== 'all' && hasBounds) {
+                map.setBounds(bounds);
+            }
         }
 
         function onRegionChange() {
             document.getElementById('dongFilter').value = 'all';
             var region = document.getElementById('regionFilter').value;
-            clearMapPolygons();
 
             if (region !== 'all') {
                 drawPolygons(region, true);
-                map.setCenter(new kakao.maps.LatLng(35.1631, 129.0532));
-                map.setLevel(5);
             } else {
                 drawPolygons('all');
                 map.setCenter(new kakao.maps.LatLng(35.1631, 129.0532));
@@ -247,15 +306,6 @@
             
             if (dong !== 'all') {
                 drawPolygons(dong, false);
-                // 선택한 동의 폴리곤 중심 좌표를 계산해서 자연스럽게 이동
-                for (let p of polygonOverlays) {
-                    var path = p.getPath();
-                    if (path.length > 0) {
-                        map.setCenter(path[0]);
-                        map.setLevel(5); // 줌 레벨을 5로 설정하여 동 전체가 한눈에 들어오도록 조정
-                        break;
-                    }
-                }
             } else {
                 drawPolygons('all');
                 map.setCenter(new kakao.maps.LatLng(35.1631, 129.0532));
