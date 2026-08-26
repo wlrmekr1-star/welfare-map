@@ -5,6 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>복지 방문 인증 및 대시보드</title>
     <script type="text/javascript" src="https://dapi.kakao.com/v2/maps/sdk.js?appkey=9821f83fe3895fe4e030aee5107a8990&libraries=services"></script>
+    <!-- 차트 그리기용 Chart.js 라이브러리 추가 -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
         body { font-family: 'Malgun Gothic', sans-serif; margin: 0; padding: 0; display: flex; height: 100vh; background: #f0f2f5; overflow: hidden; }
         
@@ -38,12 +40,15 @@
         .filter-section { background: #fdfefe; border: 1px solid #dcdde1; padding: 12px; border-radius: 8px; margin-bottom: 12px; }
         .filter-section h4 { margin: 0 0 4px 0; font-size: 12px; color: #2c3e50; }
         .filter-section select { width: 100%; padding: 8px; border-radius: 6px; border: 1px solid #bdc3c7; font-size: 12px; box-sizing: border-box; }
-        .legend-box { background: #fff; border: 1px solid #ddd; padding: 12px; border-radius: 8px; }
+        .legend-box { background: #fff; border: 1px solid #ddd; padding: 12px; border-radius: 8px; margin-bottom: 12px; }
         .legend-box h4 { margin: 0 0 8px 0; font-size: 12px; color: #333; }
         .legend-item { display: flex; align-items: center; font-size: 11px; margin-bottom: 6px; color: #555; }
         .color-dot { width: 12px; height: 12px; border-radius: 50%; display: inline-block; margin-right: 6px; }
+        
+        /* 새로 추가된 통계 차트 영역 스타일 */
+        .chart-box { background: #fff; border: 1px solid #ddd; padding: 12px; border-radius: 8px; margin-bottom: 12px; }
+        .chart-box h4 { margin: 0 0 10px 0; font-size: 12px; color: #333; }
 
-        /* 지도 위 동 이름 표시용 라벨 스타일 */
         .area-label {
             background-color: rgba(255, 255, 255, 0.85);
             border: 1px solid #bdc3c7;
@@ -133,6 +138,12 @@
                     <div class="legend-item"><span class="color-dot" style="background: #e67e22;"></span><span><b>10회~30회</b> (중점 방문)</span></div>
                     <div class="legend-item"><span class="color-dot" style="background: #3498db;"></span><span><b>1회~10회</b> (기본 방문)</span></div>
                 </div>
+
+                <!-- 목적별 방문 건수 그래프 영역 -->
+                <div class="chart-box">
+                    <h4>📊 카테고리별 방문 현황</h4>
+                    <canvas id="purposeChart" height="180"></canvas>
+                </div>
             </div>
             <div id="map"></div>
         </div>
@@ -181,6 +192,38 @@
         let activeCircles = [];
         let polygonOverlays = [];
         let labelOverlays = [];
+        let purposeChart = null; // 차트 변수 선언
+
+        // 차트 초기화 함수
+        function initChart() {
+            const ctx = document.getElementById('purposeChart').getContext('2d');
+            purposeChart = new Chart(ctx, {
+                type: 'bar', // 막대그래프
+                data: {
+                    labels: ['홍보', '사각지대', '사례관리'],
+                    datasets: [{
+                        label: '방문 건수',
+                        data: [0, 0, 0],
+                        backgroundColor: ['#3498db', '#e67e22', '#2ecc71'],
+                        borderRadius: 4
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: { beginAtZero: true, ticks: { stepSize: 1, font: { size: 10 } } },
+                        x: { ticks: { font: { size: 11, weight: 'bold' } } }
+                    },
+                    plugins: {
+                        legend: { display: false }
+                    }
+                }
+            });
+        }
+
+        // 초기화 실행
+        initChart();
 
         // GeoJSON 로드 후 지도 그리기 및 데이터 연동 실행
         fetch('busanjin.geojson')
@@ -199,7 +242,6 @@
             labelOverlays = [];
         }
 
-        // 폴리곤 중심 좌표를 계산하는 함수
         function getPolygonCenter(path) {
             let latSum = 0, lngSum = 0;
             path.forEach(coord => {
@@ -220,14 +262,14 @@
                 targetDongs = [targetFilter];
             }
 
-            var bounds = new kakao.maps.LatLngBounds(); // 자동 줌/이동을 위한 영역 객체
+            var bounds = new kakao.maps.LatLngBounds(); 
             var hasBounds = false;
 
             geojsonFeatureCollection.features.forEach(feature => {
                 var dongName = String(feature.properties.ADM_NM || "").trim();
                 var isActive = (targetFilter === 'all' || (isRegion && targetDongs.includes(dongName)) || (!isRegion && dongName === targetFilter));
                 
-                if (isActive || targetFilter !== 'all') { // 전체 보기가 아니어도 다른 동들은 옅게 깔아두기
+                if (isActive || targetFilter !== 'all') { 
                     var coordinates = feature.geometry.coordinates;
                     
                     coordinates.forEach(ring => {
@@ -245,13 +287,11 @@
                         polygon.setMap(map);
                         polygonOverlays.push(polygon);
 
-                        // 활성화된 구역은 Bounds에 추가하여 나중에 카메라를 맞출 수 있게 함
                         if (isActive && targetFilter !== 'all') {
                             path.forEach(coord => bounds.extend(coord));
                             hasBounds = true;
                         }
 
-                        // 지도에 동 이름 라벨 띄우기
                         var centerCoord = getPolygonCenter(path);
                         var customOverlay = new kakao.maps.CustomOverlay({
                             position: centerCoord,
@@ -261,16 +301,13 @@
                         customOverlay.setMap(map);
                         labelOverlays.push(customOverlay);
 
-                        // 폴리곤 클릭 이벤트 (토글 기능 적용)
                         kakao.maps.event.addListener(polygon, 'click', function() {
                             var currentFilter = document.getElementById('dongFilter').value;
                             if (currentFilter === dongName) {
-                                // 이미 선택된 동을 다시 클릭하면 전체 보기로 리셋
                                 document.getElementById('regionFilter').value = 'all';
                                 document.getElementById('dongFilter').value = 'all';
                                 onDongChange();
                             } else {
-                                // 다른 동 클릭 시 해당 동 선택
                                 document.getElementById('regionFilter').value = 'all';
                                 document.getElementById('dongFilter').value = dongName;
                                 onDongChange();
@@ -280,7 +317,6 @@
                 }
             });
 
-            // 특정 구역 선택 시 해당 구역이 한눈에 들어오도록 줌/이동 처리
             if (targetFilter !== 'all' && hasBounds) {
                 map.setBounds(bounds);
             }
@@ -323,6 +359,11 @@
             activeCircles.forEach(c => c.setMap(null));
             activeCircles = [];
 
+            // 차트 갱신용 변수 초기화
+            let promoCount = 0;
+            let blindCount = 0;
+            let caseCount = 0;
+
             var filtered = allVisitData.filter(item => {
                 var itemDong = String(item.dong || "").trim();
                 var matchRegion = true;
@@ -337,12 +378,19 @@
                 return matchRegion && matchDong && matchPeriod && matchPurpose;
             });
 
-            var totalSum = filtered.reduce((sum, item) => sum + Number(item.count || 1), 0);
-            document.getElementById('totalCount').innerText = totalSum + " 건 (선택 지역)";
+            var totalSum = 0;
 
             filtered.forEach(item => {
-                var position = new kakao.maps.LatLng(Number(item.lat), Number(item.lng));
                 var cnt = Number(item.count || 1);
+                totalSum += cnt;
+
+                // 목적별 데이터 분류 및 차트 카운트 누적
+                var purposeStr = String(item.purpose).trim();
+                if (purposeStr === '홍보') promoCount += cnt;
+                else if (purposeStr === '사각지대발굴 활동') blindCount += cnt;
+                else if (purposeStr === '사례관리(방문)') caseCount += cnt;
+
+                var position = new kakao.maps.LatLng(Number(item.lat), Number(item.lng));
                 var radiusSize, circleColor;
                 if (cnt >= 50) { radiusSize = 220; circleColor = '#c0392b'; }
                 else if (cnt >= 10) { radiusSize = 160; circleColor = '#e67e22'; }
@@ -361,6 +409,14 @@
                 kakao.maps.event.addListener(circle, 'mouseover', () => infowindow.setPosition(position) || infowindow.open(map, circle));
                 kakao.maps.event.addListener(circle, 'mouseout', () => infowindow.close());
             });
+
+            document.getElementById('totalCount').innerText = totalSum + " 건 (선택 지역)";
+
+            // 차트 데이터 업데이트
+            if (purposeChart) {
+                purposeChart.data.datasets[0].data = [promoCount, blindCount, caseCount];
+                purposeChart.update();
+            }
         }
 
         const sheetId = '1Qcqw-8UQPIVtgZLrpE3cD8qXH97qbHG9YL1Ww0GcJZQ';
