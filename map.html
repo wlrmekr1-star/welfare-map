@@ -4,25 +4,26 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>복지 방문 인증 및 대시보드</title>
-    <script type="text/javascript" src="https://dapi.kakao.com/v2/maps/sdk.js?appkey=9821f83fe3895fe4e030aee5107a8990&libraries=services"></script>
+    <!-- 카카오맵 API에 clusterer 라이브러리를 반드시 추가해야 합니다 -->
+    <script type="text/javascript" src="https://dapi.kakao.com/v2/maps/sdk.js?appkey=9821f83fe3895fe4e030aee5107a8990&libraries=services,clusterer"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
         body { font-family: 'Malgun Gothic', sans-serif; margin: 0; padding: 0; display: flex; height: 100vh; background: #f0f2f5; overflow: hidden; }
         
-        #left-menu { width: 260px; background: #1e1e2f; color: #fff; display: flex; flex-direction: column; flex-shrink: 0; box-shadow: 2px 0 10px rgba(0,0,0,0.1); z-index: 20; }
+        #left-menu { width: 260px; background: #1e1e2f; color: #fff; display: flex; flex-direction: column; flex-shrink: 0; box-shadow: 2px 0 10px rgba(0,0,0,0.1); z-index: 100; }
         .menu-header { padding: 20px; font-size: 18px; font-weight: bold; border-bottom: 1px solid #2d2d44; color: #ecf0f1; }
         .menu-list { display: flex; flex-direction: column; padding: 15px 10px; gap: 8px; }
         .menu-btn { display: flex; align-items: center; gap: 10px; width: 100%; padding: 12px 15px; border: none; background: transparent; color: #adb5bd; font-size: 15px; font-weight: bold; text-align: left; border-radius: 8px; cursor: pointer; transition: 0.2s; }
         .menu-btn:hover { background: #2a2a40; color: #fff; }
         .menu-btn.active { background: #27ae60; color: #fff; }
 
-        .main-container { flex-grow: 1; height: 100vh; position: relative; background: #f0f2f5; overflow: hidden; }
+        .main-container { flex-grow: 1; height: 100vh; position: relative; background: #f0f2f5; overflow: hidden; display: flex; flex-direction: column; }
         .tab-pane { display: none; width: 100%; height: 100%; position: absolute; top: 0; left: 0; box-sizing: border-box; background: #f0f2f5; }
         .tab-pane.active { display: flex; }
 
-        #dash-pane { display: flex; }
+        #dash-pane { display: flex; flex-direction: row; }
         #dash-sidebar { width: 340px; background: #ffffff; padding: 20px; box-sizing: border-box; overflow-y: auto; flex-shrink: 0; z-index: 10; box-shadow: 2px 0 10px rgba(0,0,0,0.05); }
-        #map { flex-grow: 1; height: 100%; }
+        #map { flex-grow: 1; height: 100%; width: 100%; }
 
         #auth-pane { justify-content: center; align-items: center; padding: 20px; z-index: 30; }
         .card { background: #fff; padding: 30px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.08); width: 100%; max-width: 420px; box-sizing: border-box; }
@@ -40,15 +41,9 @@
         .filter-section h4 { margin: 0 0 4px 0; font-size: 12px; color: #2c3e50; }
         .filter-section select { width: 100%; padding: 8px; border-radius: 6px; border: 1px solid #bdc3c7; font-size: 12px; box-sizing: border-box; }
         
-        .legend-box { background: #fff; border: 1px solid #ddd; padding: 12px; border-radius: 8px; margin-bottom: 12px; }
-        .legend-box h4 { margin: 0 0 8px 0; font-size: 12px; color: #333; }
-        .legend-item { display: flex; align-items: center; font-size: 11px; margin-bottom: 6px; color: #555; }
-        .color-dot { width: 12px; height: 12px; border-radius: 3px; display: inline-block; margin-right: 6px; }
-        
         .chart-box { background: #fff; border: 1px solid #ddd; padding: 12px; border-radius: 8px; margin-bottom: 12px; }
         .chart-box h4 { margin: 0 0 10px 0; font-size: 12px; color: #333; }
 
-        /* 지도 위 동 이름 표시용 텍스트 라벨 */
         .area-label {
             background-color: rgba(255, 255, 255, 0.9);
             border: 2px solid #2c3e50;
@@ -60,27 +55,24 @@
             text-align: center;
             white-space: nowrap;
             box-shadow: 0 2px 4px rgba(0,0,0,0.3);
-            cursor: pointer; /* 클릭 가능하도록 커서 변경 */
+            cursor: pointer;
             transition: 0.2s;
         }
-        .area-label:hover { background-color: #2c3e50; color: #fff; }
 
-        /* 지도 위 방문 목적별 요약 배지(마커) 스타일 */
-        .visit-marker {
-            background: rgba(255, 255, 255, 0.95);
-            border: 2px solid #bdc3c7;
-            border-radius: 8px;
-            padding: 6px;
-            box-shadow: 0 4px 8px rgba(0,0,0,0.2);
-            font-size: 12px;
-            font-weight: bold;
-            text-align: center;
-            z-index: 30;
+        /* 스마트폰 모바일 화면을 위한 반응형 CSS */
+        @media (max-width: 768px) {
+            body { flex-direction: column; }
+            #left-menu { width: 100%; flex-direction: row; height: auto; padding: 0; }
+            .menu-header { display: none; }
+            .menu-list { flex-direction: row; padding: 10px; width: 100%; justify-content: space-around; }
+            .menu-btn { justify-content: center; padding: 12px; font-size: 14px; width: 45%; }
+            
+            #dash-pane { flex-direction: column-reverse; height: calc(100vh - 60px); position: relative; }
+            #dash-sidebar { width: 100%; height: 45vh; border-top: 2px solid #ddd; border-radius: 15px 15px 0 0; box-shadow: 0 -2px 10px rgba(0,0,0,0.1); padding: 15px; }
+            #map { width: 100%; height: 55vh; }
+            
+            #auth-pane { height: calc(100vh - 60px); }
         }
-        .visit-marker .m-title { font-size: 13px; color: #333; border-bottom: 1px dashed #ccc; margin-bottom: 4px; padding-bottom: 3px; }
-        .visit-marker .m-promo { color: #fff; background: #3498db; border-radius: 4px; padding: 3px 6px; margin: 2px 0; }
-        .visit-marker .m-blind { color: #fff; background: #e67e22; border-radius: 4px; padding: 3px 6px; margin: 2px 0; }
-        .visit-marker .m-case { color: #fff; background: #2ecc71; border-radius: 4px; padding: 3px 6px; margin: 2px 0; }
     </style>
 </head>
 <body>
@@ -151,14 +143,6 @@
                     </select>
                 </div>
 
-                <!-- 목적별 범례로 변경 -->
-                <div class="legend-box">
-                    <h4>🗺️ 방문 목적별 배지 안내</h4>
-                    <div class="legend-item"><span class="color-dot" style="background: #3498db;"></span><span>홍보 활동</span></div>
-                    <div class="legend-item"><span class="color-dot" style="background: #e67e22;"></span><span>사각지대 발굴 활동</span></div>
-                    <div class="legend-item"><span class="color-dot" style="background: #2ecc71;"></span><span>사례관리 (방문)</span></div>
-                </div>
-
                 <div class="chart-box">
                     <h4>📊 카테고리별 방문 현황</h4>
                     <div style="position: relative; height: 160px; width: 100%;">
@@ -212,8 +196,34 @@
         }
 
         var container = document.getElementById('map');
-        var options = { center: new kakao.maps.LatLng(35.1631, 129.0532), level: 6, minLevel: 3, maxLevel: 8 };
+        var options = { center: new kakao.maps.LatLng(35.1631, 129.0532), level: 6 };
         var map = new kakao.maps.Map(container, options);
+
+        // 개인정보 보호용 마커 클러스터러 추가
+        var clusterer = new kakao.maps.MarkerClusterer({
+            map: map,
+            averageCenter: true,
+            minLevel: 3,
+            styles: [{
+                width : '40px', height : '40px',
+                background: 'rgba(52, 152, 219, 0.9)',
+                borderRadius: '20px',
+                color: '#fff', textAlign: 'center', fontWeight: 'bold', lineHeight: '40px',
+                border: '2px solid #fff', boxShadow: '0 2px 5px rgba(0,0,0,0.3)'
+            }, {
+                width : '50px', height : '50px',
+                background: 'rgba(230, 126, 34, 0.9)',
+                borderRadius: '25px',
+                color: '#fff', textAlign: 'center', fontWeight: 'bold', lineHeight: '50px',
+                border: '2px solid #fff', boxShadow: '0 2px 5px rgba(0,0,0,0.3)'
+            }, {
+                width : '60px', height : '60px',
+                background: 'rgba(231, 76, 60, 0.9)',
+                borderRadius: '30px',
+                color: '#fff', textAlign: 'center', fontWeight: 'bold', lineHeight: '60px',
+                border: '2px solid #fff', boxShadow: '0 2px 5px rgba(0,0,0,0.3)'
+            }]
+        });
 
         const regionMap = {
             "1권역": ["부전1동", "연지동", "초읍동", "양정1동", "양정2동"],
@@ -224,7 +234,6 @@
 
         let geojsonFeatureCollection = null;
         let allVisitData = [];
-        let activeMarkers = [];
         let polygonOverlays = [];
         let labelOverlays = [];
         let purposeChart = null;
@@ -277,15 +286,12 @@
             return new kakao.maps.LatLng(latSum / path.length, lngSum / path.length);
         }
 
-        // 동 이름 라벨 또는 다각형 클릭 시 실행되는 토글 함수
         window.selectDongFromMap = function(dongName) {
             var currentFilter = document.getElementById('dongFilter').value;
             if (currentFilter === dongName) {
-                // 이미 선택된 동을 다시 누르면 전체보기로 리셋
                 document.getElementById('regionFilter').value = 'all';
                 document.getElementById('dongFilter').value = 'all';
             } else {
-                // 새로운 동을 누르면 해당 동으로 선택
                 document.getElementById('regionFilter').value = 'all';
                 document.getElementById('dongFilter').value = dongName;
             }
@@ -334,7 +340,6 @@
                         }
 
                         var centerCoord = getPolygonCenter(path);
-                        // 동 이름 라벨 생성 (클릭 시 토글 함수 실행)
                         var customOverlay = new kakao.maps.CustomOverlay({
                             position: centerCoord,
                             content: `<div class="area-label" onclick="selectDongFromMap('${dongName}')">${dongName}</div>`,
@@ -343,7 +348,6 @@
                         customOverlay.setMap(map);
                         labelOverlays.push(customOverlay);
 
-                        // 다각형 클릭 시에도 토글 함수 실행
                         kakao.maps.event.addListener(polygon, 'click', function() {
                             window.selectDongFromMap(dongName);
                         });
@@ -351,7 +355,6 @@
                 }
             });
 
-            // 선택된 영역이 한눈에 보이도록 자동으로 지도의 범위를 최적화 (자동 줌)
             if (targetFilter !== 'all' && hasBounds) {
                 map.setBounds(bounds);
             }
@@ -377,7 +380,6 @@
             
             if (dong !== 'all') {
                 drawPolygons(dong, false);
-                // drawPolygons 안의 map.setBounds(bounds) 가 자동으로 줌과 이동을 처리해 줌!
             } else {
                 drawPolygons('all');
                 map.setCenter(new kakao.maps.LatLng(35.1631, 129.0532));
@@ -392,16 +394,13 @@
             var selectedPeriod = document.getElementById('periodFilter').value;
             var selectedPurpose = document.getElementById('purposeFilter').value;
 
-            activeMarkers.forEach(m => m.setMap(null));
-            activeMarkers = [];
+            clusterer.clear(); // 기존 마커들 삭제
+            let markers = [];
 
             let promoCount = 0, blindCount = 0, caseCount = 0;
             var totalSum = 0;
-            
-            // 목적별 데이터를 동일한 좌표(동)에 묶기 위한 그룹 객체
-            var markerGroups = {};
 
-            allVisitData.forEach(item => {
+            var filtered = allVisitData.filter(item => {
                 var itemDong = String(item.dong || "").replace(/\s/g, "");
                 var targetDong = selectedDong.replace(/\s/g, "");
                 
@@ -415,25 +414,38 @@
                 var matchPeriod = (selectedPeriod === 'year' || String(item.period).trim() === String(selectedPeriod));
                 var matchPurpose = (selectedPurpose === 'all' || String(item.purpose).trim() === String(selectedPurpose));
 
-                if (matchRegion && matchDong && matchPeriod && matchPurpose) {
-                    var cnt = Number(item.count || 1);
-                    totalSum += cnt;
+                return matchRegion && matchDong && matchPeriod && matchPurpose;
+            });
 
-                    var purposeStr = String(item.purpose).replace(/\s/g, "");
-                    if (purposeStr === '홍보') promoCount += cnt;
-                    else if (purposeStr.includes('사각지대')) blindCount += cnt;
-                    else if (purposeStr.includes('사례관리')) caseCount += cnt;
+            filtered.forEach(item => {
+                var cnt = Number(item.count || 1);
+                totalSum += cnt;
 
-                    // 동 이름 기준으로 데이터 그룹화 (한 동에 배지 1개씩 띄우기 위함)
-                    var key = itemDong || "미지정";
-                    if (!markerGroups[key]) {
-                        markerGroups[key] = { lat: item.lat, lng: item.lng, dong: item.dong, promo: 0, blind: 0, case: 0 };
-                    }
-                    
-                    if (purposeStr === '홍보') markerGroups[key].promo += cnt;
-                    else if (purposeStr.includes('사각지대')) markerGroups[key].blind += cnt;
-                    else if (purposeStr.includes('사례관리')) markerGroups[key].case += cnt;
-                }
+                var purposeStr = String(item.purpose).replace(/\s/g, "");
+                if (purposeStr === '홍보') promoCount += cnt;
+                else if (purposeStr.includes('사각지대')) blindCount += cnt;
+                else if (purposeStr.includes('사례관리')) caseCount += cnt;
+
+                var position = new kakao.maps.LatLng(Number(item.lat), Number(item.lng));
+                
+                // 일반 마커 생성 (클러스터링 처리를 위해)
+                var marker = new kakao.maps.Marker({
+                    position: position
+                });
+
+                // 프라이버시 보호용 인포윈도우 (집 주소 미표시, 동과 목적만 표시)
+                var infowindow = new kakao.maps.InfoWindow({
+                    content: `<div style="padding:5px; font-size:12px; font-weight:bold;">[${item.dong}]<br>목적: ${item.purpose}</div>`
+                });
+
+                kakao.maps.event.addListener(marker, 'mouseover', function() {
+                    infowindow.open(map, marker);
+                });
+                kakao.maps.event.addListener(marker, 'mouseout', function() {
+                    infowindow.close();
+                });
+
+                markers.push(marker);
             });
 
             document.getElementById('totalCount').innerText = totalSum + " 건 (선택 지역)";
@@ -443,26 +455,8 @@
                 purposeChart.update();
             }
 
-            // 기존 원 대신 요약 정보를 담은 예쁜 커스텀 배지를 지도에 그림
-            Object.values(markerGroups).forEach(group => {
-                var position = new kakao.maps.LatLng(Number(group.lat), Number(group.lng));
-                
-                var content = `<div class="visit-marker">`;
-                content += `<div class="m-title">${group.dong}</div>`;
-                if(group.promo > 0) content += `<div class="m-promo">홍보 ${group.promo}건</div>`;
-                if(group.blind > 0) content += `<div class="m-blind">사각 ${group.blind}건</div>`;
-                if(group.case > 0)  content += `<div class="m-case">사례 ${group.case}건</div>`;
-                content += `</div>`;
-
-                var customMarker = new kakao.maps.CustomOverlay({
-                    position: position,
-                    content: content,
-                    yAnchor: 1.3, // 동 라벨(이름) 위쪽에 살짝 뜨도록 조정
-                    zIndex: 30
-                });
-                customMarker.setMap(map);
-                activeMarkers.push(customMarker);
-            });
+            // 클러스터러에 마커들을 묶어서 추가 (개별 위치 숨김 처리 효과)
+            clusterer.addMarkers(markers);
         }
 
         const sheetId = '1Qcqw-8UQPIVtgZLrpE3cD8qXH97qbHG9YL1Ww0GcJZQ';
