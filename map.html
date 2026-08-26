@@ -137,7 +137,6 @@
                     <div class="legend-item"><span class="color-dot" style="background: #3498db;"></span><span><b>1회~10회</b> (기본 방문)</span></div>
                 </div>
 
-                <!-- 차트 영역: 높이를 확실히 고정하여 늘어나지 않게 처리 -->
                 <div class="chart-box">
                     <h4>📊 카테고리별 방문 현황</h4>
                     <div style="position: relative; height: 160px; width: 100%;">
@@ -208,7 +207,6 @@
         let labelOverlays = [];
         let purposeChart = null;
 
-        // 차트 초기화 (막대 두께 얇게, 높이 고정)
         function initChart() {
             const ctx = document.getElementById('purposeChart').getContext('2d');
             purposeChart = new Chart(ctx, {
@@ -220,12 +218,12 @@
                         data: [0, 0, 0],
                         backgroundColor: ['#3498db', '#e67e22', '#2ecc71'],
                         borderRadius: 4,
-                        maxBarThickness: 30 // 막대 최대 두께 축소 (이쁘게 보임)
+                        maxBarThickness: 30
                     }]
                 },
                 options: {
                     responsive: true,
-                    maintainAspectRatio: false, // 부모 컨테이너(160px)에 정확히 맞춤
+                    maintainAspectRatio: false, 
                     scales: { 
                         y: { beginAtZero: true, ticks: { stepSize: 1, font: { size: 10 } } }, 
                         x: { ticks: { font: { size: 11, weight: 'bold' } } } 
@@ -372,13 +370,17 @@
             let promoCount = 0, blindCount = 0, caseCount = 0;
 
             var filtered = allVisitData.filter(item => {
-                var itemDong = String(item.dong || "").trim();
+                // 공백 오타 무시 (예: "부암 1동" -> "부암1동" 처리)
+                var itemDong = String(item.dong || "").replace(/\s/g, "");
+                var targetDong = selectedDong.replace(/\s/g, "");
+                
                 var matchRegion = true;
                 if (selectedDong === 'all' && selectedRegion !== 'all') {
-                    var allowedDongs = regionMap[selectedRegion] || [];
+                    var allowedDongs = (regionMap[selectedRegion] || []).map(d => d.replace(/\s/g, ""));
                     matchRegion = allowedDongs.includes(itemDong);
                 }
-                var matchDong = (selectedDong === 'all' || itemDong === selectedDong);
+                
+                var matchDong = (selectedDong === 'all' || itemDong === targetDong);
                 var matchPeriod = (selectedPeriod === 'year' || String(item.period).trim() === String(selectedPeriod));
                 var matchPurpose = (selectedPurpose === 'all' || String(item.purpose).trim() === String(selectedPurpose));
 
@@ -391,10 +393,10 @@
                 var cnt = Number(item.count || 1);
                 totalSum += cnt;
 
-                var purposeStr = String(item.purpose).trim();
+                var purposeStr = String(item.purpose).replace(/\s/g, "");
                 if (purposeStr === '홍보') promoCount += cnt;
-                else if (purposeStr === '사각지대발굴 활동') blindCount += cnt;
-                else if (purposeStr === '사례관리(방문)') caseCount += cnt;
+                else if (purposeStr.includes('사각지대')) blindCount += cnt;
+                else if (purposeStr.includes('사례관리')) caseCount += cnt;
 
                 var position = new kakao.maps.LatLng(Number(item.lat), Number(item.lng));
                 var radiusSize, circleColor;
@@ -428,28 +430,34 @@
         const url = `https://docs.google.com/spreadsheets/d/${sheetId}/gviz/tq?tqx=out:json`;
 
         function loadSheetData() {
-            fetch(url)
+            // 캐시를 무력화하여 구글 시트의 최신 데이터를 무조건 즉시 가져오도록 수정
+            const fetchUrl = url + "&_nocache=" + new Date().getTime();
+            
+            fetch(fetchUrl)
                 .then(res => res.text())
                 .then(text => {
                     const json = JSON.parse(text.substring(47).slice(0, -2));
                     const rows = json.table.rows;
 
-                    allVisitData = rows.map(row => ({
-                        title: (row.c[0] && row.c[0].v) ? row.c[0].v : '현장 방문',
-                        lat: (row.c[1] && row.c[1].v) ? row.c[1].v : 35.1631,
-                        lng: (row.c[2] && row.c[2].v) ? row.c[2].v : 129.0532,
-                        purpose: (row.c[3] && row.c[3].v) ? row.c[3].v : '홍보',
-                        period: (row.c[4] && row.c[4].v) ? row.c[4].v : '8',
-                        count: (row.c[5] && row.c[5].v) ? row.c[5].v : 1,
-                        dong: (row.c[6] && row.c[6].v) ? String(row.c[6].v).trim() : '미지정'
-                    }));
+                    allVisitData = rows.map(row => {
+                        // G열(동이름) 데이터가 비어있을 경우 에러 방지
+                        var dongVal = (row.c && row.c.length > 6 && row.c[6] && row.c[6].v) ? String(row.c[6].v) : '미지정';
+                        return {
+                            title: (row.c && row.c.length > 0 && row.c[0] && row.c[0].v) ? row.c[0].v : '현장 방문',
+                            lat: (row.c && row.c.length > 1 && row.c[1] && row.c[1].v) ? row.c[1].v : 35.1631,
+                            lng: (row.c && row.c.length > 2 && row.c[2] && row.c[2].v) ? row.c[2].v : 129.0532,
+                            purpose: (row.c && row.c.length > 3 && row.c[3] && row.c[3].v) ? row.c[3].v : '홍보',
+                            period: (row.c && row.c.length > 4 && row.c[4] && row.c[4].v) ? row.c[4].v : '8',
+                            count: (row.c && row.c.length > 5 && row.c[5] && row.c[5].v) ? row.c[5].v : 1,
+                            dong: dongVal
+                        };
+                    });
 
                     filterData();
                 })
                 .catch(err => console.error("구글 시트 데이터 로드 실패:", err));
         }
 
-        // 사용자가 제공해준 새로운 URL로 변경 완료!
         const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyLAqE5AQPtZYau-mG3OgmH5TU48RhOGxLUD9DSgtIaOp1-1Nhtu0cSXdPc9l6YARNH/exec";
 
         document.getElementById('visitForm').addEventListener('submit', function(e) {
@@ -479,7 +487,7 @@
                 purpose: document.getElementById('purpose').value,
                 period: period,
                 count: 1,
-                dong: document.getElementById('authDong').value // 선택된 동 이름 가져오기
+                dong: document.getElementById('authDong').value
             };
 
             fetch(SCRIPT_URL, {
@@ -493,7 +501,7 @@
                 btn.innerText = "인증 데이터 전송하기";
                 btn.disabled = false;
                 document.getElementById('visitForm').reset();
-                setTimeout(loadSheetData, 1500);
+                setTimeout(loadSheetData, 1500); // 전송 완료 후 데이터 새로고침
             }).catch(error => {
                 alert('전송 실패: ' + error);
                 const btn = document.getElementById('submitBtn');
