@@ -383,7 +383,7 @@
                 document.getElementById('visitForm').reset();
                 setTimeout(loadSheetData, 1500);
             }).catch(error => {
-                .alert('전송 실패: ' + error);
+                alert('전송 실패: ' + error);
                 const btn = document.getElementById('submitBtn');
                 btn.innerText = "인증 데이터 전송하기";
                 btn.disabled = false;
