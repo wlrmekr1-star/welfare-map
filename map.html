@@ -39,27 +39,48 @@
         .filter-section { background: #fdfefe; border: 1px solid #dcdde1; padding: 12px; border-radius: 8px; margin-bottom: 12px; }
         .filter-section h4 { margin: 0 0 4px 0; font-size: 12px; color: #2c3e50; }
         .filter-section select { width: 100%; padding: 8px; border-radius: 6px; border: 1px solid #bdc3c7; font-size: 12px; box-sizing: border-box; }
+        
         .legend-box { background: #fff; border: 1px solid #ddd; padding: 12px; border-radius: 8px; margin-bottom: 12px; }
         .legend-box h4 { margin: 0 0 8px 0; font-size: 12px; color: #333; }
         .legend-item { display: flex; align-items: center; font-size: 11px; margin-bottom: 6px; color: #555; }
-        .color-dot { width: 12px; height: 12px; border-radius: 50%; display: inline-block; margin-right: 6px; }
+        .color-dot { width: 12px; height: 12px; border-radius: 3px; display: inline-block; margin-right: 6px; }
         
         .chart-box { background: #fff; border: 1px solid #ddd; padding: 12px; border-radius: 8px; margin-bottom: 12px; }
         .chart-box h4 { margin: 0 0 10px 0; font-size: 12px; color: #333; }
 
+        /* 지도 위 동 이름 표시용 텍스트 라벨 */
         .area-label {
-            background-color: rgba(255, 255, 255, 0.85);
-            border: 1px solid #bdc3c7;
-            border-radius: 4px;
+            background-color: rgba(255, 255, 255, 0.9);
+            border: 2px solid #2c3e50;
+            border-radius: 6px;
             color: #2c3e50;
-            font-size: 12px;
+            font-size: 13px;
             font-weight: bold;
-            padding: 3px 6px;
+            padding: 4px 8px;
             text-align: center;
             white-space: nowrap;
-            box-shadow: 0 1px 3px rgba(0,0,0,0.2);
-            pointer-events: none;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.3);
+            cursor: pointer; /* 클릭 가능하도록 커서 변경 */
+            transition: 0.2s;
         }
+        .area-label:hover { background-color: #2c3e50; color: #fff; }
+
+        /* 지도 위 방문 목적별 요약 배지(마커) 스타일 */
+        .visit-marker {
+            background: rgba(255, 255, 255, 0.95);
+            border: 2px solid #bdc3c7;
+            border-radius: 8px;
+            padding: 6px;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+            font-size: 12px;
+            font-weight: bold;
+            text-align: center;
+            z-index: 30;
+        }
+        .visit-marker .m-title { font-size: 13px; color: #333; border-bottom: 1px dashed #ccc; margin-bottom: 4px; padding-bottom: 3px; }
+        .visit-marker .m-promo { color: #fff; background: #3498db; border-radius: 4px; padding: 3px 6px; margin: 2px 0; }
+        .visit-marker .m-blind { color: #fff; background: #e67e22; border-radius: 4px; padding: 3px 6px; margin: 2px 0; }
+        .visit-marker .m-case { color: #fff; background: #2ecc71; border-radius: 4px; padding: 3px 6px; margin: 2px 0; }
     </style>
 </head>
 <body>
@@ -130,11 +151,12 @@
                     </select>
                 </div>
 
+                <!-- 목적별 범례로 변경 -->
                 <div class="legend-box">
-                    <h4>🗺️ 방문 횟수별 구역 색상</h4>
-                    <div class="legend-item"><span class="color-dot" style="background: #c0392b;"></span><span><b>50회 이상</b> (초집중 관리)</span></div>
-                    <div class="legend-item"><span class="color-dot" style="background: #e67e22;"></span><span><b>10회~30회</b> (중점 방문)</span></div>
-                    <div class="legend-item"><span class="color-dot" style="background: #3498db;"></span><span><b>1회~10회</b> (기본 방문)</span></div>
+                    <h4>🗺️ 방문 목적별 배지 안내</h4>
+                    <div class="legend-item"><span class="color-dot" style="background: #3498db;"></span><span>홍보 활동</span></div>
+                    <div class="legend-item"><span class="color-dot" style="background: #e67e22;"></span><span>사각지대 발굴 활동</span></div>
+                    <div class="legend-item"><span class="color-dot" style="background: #2ecc71;"></span><span>사례관리 (방문)</span></div>
                 </div>
 
                 <div class="chart-box">
@@ -190,7 +212,7 @@
         }
 
         var container = document.getElementById('map');
-        var options = { center: new kakao.maps.LatLng(35.1631, 129.0532), level: 6, minLevel: 4, maxLevel: 8 };
+        var options = { center: new kakao.maps.LatLng(35.1631, 129.0532), level: 6, minLevel: 3, maxLevel: 8 };
         var map = new kakao.maps.Map(container, options);
 
         const regionMap = {
@@ -202,7 +224,7 @@
 
         let geojsonFeatureCollection = null;
         let allVisitData = [];
-        let activeCircles = [];
+        let activeMarkers = [];
         let polygonOverlays = [];
         let labelOverlays = [];
         let purposeChart = null;
@@ -222,12 +244,8 @@
                     }]
                 },
                 options: {
-                    responsive: true,
-                    maintainAspectRatio: false, 
-                    scales: { 
-                        y: { beginAtZero: true, ticks: { stepSize: 1, font: { size: 10 } } }, 
-                        x: { ticks: { font: { size: 11, weight: 'bold' } } } 
-                    },
+                    responsive: true, maintainAspectRatio: false, 
+                    scales: { y: { beginAtZero: true, ticks: { stepSize: 1, font: { size: 10 } } }, x: { ticks: { font: { size: 11, weight: 'bold' } } } },
                     plugins: { legend: { display: false } }
                 }
             });
@@ -258,6 +276,21 @@
             });
             return new kakao.maps.LatLng(latSum / path.length, lngSum / path.length);
         }
+
+        // 동 이름 라벨 또는 다각형 클릭 시 실행되는 토글 함수
+        window.selectDongFromMap = function(dongName) {
+            var currentFilter = document.getElementById('dongFilter').value;
+            if (currentFilter === dongName) {
+                // 이미 선택된 동을 다시 누르면 전체보기로 리셋
+                document.getElementById('regionFilter').value = 'all';
+                document.getElementById('dongFilter').value = 'all';
+            } else {
+                // 새로운 동을 누르면 해당 동으로 선택
+                document.getElementById('regionFilter').value = 'all';
+                document.getElementById('dongFilter').value = dongName;
+            }
+            onDongChange();
+        };
 
         function drawPolygons(targetFilter, isRegion = false) {
             clearMapPolygons();
@@ -301,30 +334,24 @@
                         }
 
                         var centerCoord = getPolygonCenter(path);
+                        // 동 이름 라벨 생성 (클릭 시 토글 함수 실행)
                         var customOverlay = new kakao.maps.CustomOverlay({
                             position: centerCoord,
-                            content: `<div class="area-label">${dongName}</div>`,
+                            content: `<div class="area-label" onclick="selectDongFromMap('${dongName}')">${dongName}</div>`,
                             yAnchor: 0.5
                         });
                         customOverlay.setMap(map);
                         labelOverlays.push(customOverlay);
 
+                        // 다각형 클릭 시에도 토글 함수 실행
                         kakao.maps.event.addListener(polygon, 'click', function() {
-                            var currentFilter = document.getElementById('dongFilter').value;
-                            if (currentFilter === dongName) {
-                                document.getElementById('regionFilter').value = 'all';
-                                document.getElementById('dongFilter').value = 'all';
-                                onDongChange();
-                            } else {
-                                document.getElementById('regionFilter').value = 'all';
-                                document.getElementById('dongFilter').value = dongName;
-                                onDongChange();
-                            }
+                            window.selectDongFromMap(dongName);
                         });
                     });
                 }
             });
 
+            // 선택된 영역이 한눈에 보이도록 자동으로 지도의 범위를 최적화 (자동 줌)
             if (targetFilter !== 'all' && hasBounds) {
                 map.setBounds(bounds);
             }
@@ -350,6 +377,7 @@
             
             if (dong !== 'all') {
                 drawPolygons(dong, false);
+                // drawPolygons 안의 map.setBounds(bounds) 가 자동으로 줌과 이동을 처리해 줌!
             } else {
                 drawPolygons('all');
                 map.setCenter(new kakao.maps.LatLng(35.1631, 129.0532));
@@ -364,13 +392,16 @@
             var selectedPeriod = document.getElementById('periodFilter').value;
             var selectedPurpose = document.getElementById('purposeFilter').value;
 
-            activeCircles.forEach(c => c.setMap(null));
-            activeCircles = [];
+            activeMarkers.forEach(m => m.setMap(null));
+            activeMarkers = [];
 
             let promoCount = 0, blindCount = 0, caseCount = 0;
+            var totalSum = 0;
+            
+            // 목적별 데이터를 동일한 좌표(동)에 묶기 위한 그룹 객체
+            var markerGroups = {};
 
-            var filtered = allVisitData.filter(item => {
-                // 공백 오타 무시 (예: "부암 1동" -> "부암1동" 처리)
+            allVisitData.forEach(item => {
                 var itemDong = String(item.dong || "").replace(/\s/g, "");
                 var targetDong = selectedDong.replace(/\s/g, "");
                 
@@ -384,38 +415,25 @@
                 var matchPeriod = (selectedPeriod === 'year' || String(item.period).trim() === String(selectedPeriod));
                 var matchPurpose = (selectedPurpose === 'all' || String(item.purpose).trim() === String(selectedPurpose));
 
-                return matchRegion && matchDong && matchPeriod && matchPurpose;
-            });
+                if (matchRegion && matchDong && matchPeriod && matchPurpose) {
+                    var cnt = Number(item.count || 1);
+                    totalSum += cnt;
 
-            var totalSum = 0;
+                    var purposeStr = String(item.purpose).replace(/\s/g, "");
+                    if (purposeStr === '홍보') promoCount += cnt;
+                    else if (purposeStr.includes('사각지대')) blindCount += cnt;
+                    else if (purposeStr.includes('사례관리')) caseCount += cnt;
 
-            filtered.forEach(item => {
-                var cnt = Number(item.count || 1);
-                totalSum += cnt;
-
-                var purposeStr = String(item.purpose).replace(/\s/g, "");
-                if (purposeStr === '홍보') promoCount += cnt;
-                else if (purposeStr.includes('사각지대')) blindCount += cnt;
-                else if (purposeStr.includes('사례관리')) caseCount += cnt;
-
-                var position = new kakao.maps.LatLng(Number(item.lat), Number(item.lng));
-                var radiusSize, circleColor;
-                if (cnt >= 50) { radiusSize = 220; circleColor = '#c0392b'; }
-                else if (cnt >= 10) { radiusSize = 160; circleColor = '#e67e22'; }
-                else { radiusSize = 110; circleColor = '#3498db'; }
-
-                var circle = new kakao.maps.Circle({
-                    center: position, radius: radiusSize, strokeWeight: 2, strokeColor: circleColor, strokeOpacity: 0.9, fillColor: circleColor, fillOpacity: 0.45
-                });
-                circle.setMap(map);
-                activeCircles.push(circle);
-
-                var infowindow = new kakao.maps.InfoWindow({
-                    content: '<div style="padding:6px 10px; font-size:12px; font-weight:bold;">📍 ' + (item.title || '현장 방문') + '<br>동: ' + (item.dong || '미지정') + '<br>목적: ' + item.purpose + '<br>방문: ' + cnt + '회</div>'
-                });
-
-                kakao.maps.event.addListener(circle, 'mouseover', () => infowindow.setPosition(position) || infowindow.open(map, circle));
-                kakao.maps.event.addListener(circle, 'mouseout', () => infowindow.close());
+                    // 동 이름 기준으로 데이터 그룹화 (한 동에 배지 1개씩 띄우기 위함)
+                    var key = itemDong || "미지정";
+                    if (!markerGroups[key]) {
+                        markerGroups[key] = { lat: item.lat, lng: item.lng, dong: item.dong, promo: 0, blind: 0, case: 0 };
+                    }
+                    
+                    if (purposeStr === '홍보') markerGroups[key].promo += cnt;
+                    else if (purposeStr.includes('사각지대')) markerGroups[key].blind += cnt;
+                    else if (purposeStr.includes('사례관리')) markerGroups[key].case += cnt;
+                }
             });
 
             document.getElementById('totalCount').innerText = totalSum + " 건 (선택 지역)";
@@ -424,13 +442,33 @@
                 purposeChart.data.datasets[0].data = [promoCount, blindCount, caseCount];
                 purposeChart.update();
             }
+
+            // 기존 원 대신 요약 정보를 담은 예쁜 커스텀 배지를 지도에 그림
+            Object.values(markerGroups).forEach(group => {
+                var position = new kakao.maps.LatLng(Number(group.lat), Number(group.lng));
+                
+                var content = `<div class="visit-marker">`;
+                content += `<div class="m-title">${group.dong}</div>`;
+                if(group.promo > 0) content += `<div class="m-promo">홍보 ${group.promo}건</div>`;
+                if(group.blind > 0) content += `<div class="m-blind">사각 ${group.blind}건</div>`;
+                if(group.case > 0)  content += `<div class="m-case">사례 ${group.case}건</div>`;
+                content += `</div>`;
+
+                var customMarker = new kakao.maps.CustomOverlay({
+                    position: position,
+                    content: content,
+                    yAnchor: 1.3, // 동 라벨(이름) 위쪽에 살짝 뜨도록 조정
+                    zIndex: 30
+                });
+                customMarker.setMap(map);
+                activeMarkers.push(customMarker);
+            });
         }
 
         const sheetId = '1Qcqw-8UQPIVtgZLrpE3cD8qXH97qbHG9YL1Ww0GcJZQ';
         const url = `https://docs.google.com/spreadsheets/d/${sheetId}/gviz/tq?tqx=out:json`;
 
         function loadSheetData() {
-            // 캐시를 무력화하여 구글 시트의 최신 데이터를 무조건 즉시 가져오도록 수정
             const fetchUrl = url + "&_nocache=" + new Date().getTime();
             
             fetch(fetchUrl)
@@ -440,7 +478,6 @@
                     const rows = json.table.rows;
 
                     allVisitData = rows.map(row => {
-                        // G열(동이름) 데이터가 비어있을 경우 에러 방지
                         var dongVal = (row.c && row.c.length > 6 && row.c[6] && row.c[6].v) ? String(row.c[6].v) : '미지정';
                         return {
                             title: (row.c && row.c.length > 0 && row.c[0] && row.c[0].v) ? row.c[0].v : '현장 방문',
@@ -487,7 +524,7 @@
                 purpose: document.getElementById('purpose').value,
                 period: period,
                 count: 1,
-                dong: document.getElementById('authDong').value
+                dong: document.getElementById('authDong').value 
             };
 
             fetch(SCRIPT_URL, {
@@ -501,7 +538,7 @@
                 btn.innerText = "인증 데이터 전송하기";
                 btn.disabled = false;
                 document.getElementById('visitForm').reset();
-                setTimeout(loadSheetData, 1500); // 전송 완료 후 데이터 새로고침
+                setTimeout(loadSheetData, 1500); 
             }).catch(error => {
                 alert('전송 실패: ' + error);
                 const btn = document.getElementById('submitBtn');
