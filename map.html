@@ -59,9 +59,31 @@
         .area-label { background-color: rgba(255, 255, 255, 0.9); border: 2px solid #2c3e50; border-radius: 6px; color: #2c3e50; font-size: 13px; font-weight: bold; padding: 4px 8px; text-align: center; white-space: nowrap; box-shadow: 0 2px 4px rgba(0,0,0,0.3); cursor: pointer; transition: 0.2s; }
         .area-label:hover { background-color: #2c3e50; color: #fff; }
 
-        /* 인증 방식 선택 라디오 버튼 스타일 */
-        .auth-method-selector { display: flex; justify-content: space-between; background: #fdfefe; border: 1px solid #ccc; border-radius: 8px; padding: 10px; margin-top: 10px; }
-        .auth-method-selector label { font-size: 13px; font-weight: bold; margin: 0; display: flex; align-items: center; gap: 5px; cursor: pointer; color: #2c3e50; }
+        /* [수정됨] 인증 방식 선택 라디오 버튼 스타일 (글자 쪼개짐 방지) */
+        .auth-method-selector { 
+            display: flex; 
+            flex-wrap: wrap; /* 공간이 부족하면 자연스럽게 줄바꿈 */
+            justify-content: center; /* 가운데 정렬 */
+            gap: 15px; /* 항목 간 간격 */
+            background: #fdfefe; 
+            border: 1px solid #ccc; 
+            border-radius: 8px; 
+            padding: 15px 10px; 
+            margin-top: 10px; 
+        }
+        .auth-method-selector label { 
+            font-size: 13px; 
+            font-weight: bold; 
+            margin: 0; 
+            display: flex; 
+            align-items: center; 
+            gap: 5px; 
+            cursor: pointer; 
+            color: #2c3e50; 
+            white-space: nowrap; /* 글자가 중간에 쪼개지지 않도록 강제 유지 */
+            word-break: keep-all; /* 단어 단위 유지 */
+        }
+        
         .method-panel { background: #f9fbfd; border: 1px solid #e1e8ed; padding: 15px; border-radius: 8px; margin-top: 10px; }
 
         @media (max-width: 768px) {
@@ -77,7 +99,9 @@
             .drag-handle { width: 50px; height: 5px; background: #bdc3c7; border-radius: 3px; }
             
             #auth-pane { height: calc(100vh - 60px); overflow-y: auto; align-items: flex-start; }
-            .auth-method-selector { flex-direction: column; gap: 10px; }
+            
+            /* 모바일 화면에서는 라디오 버튼이 세로로 깔끔하게 떨어지도록 설정 */
+            .auth-method-selector { flex-direction: column; gap: 12px; align-items: flex-start; padding: 15px; }
         }
     </style>
 </head>
@@ -524,7 +548,7 @@
                     if (status === kakao.maps.services.Status.OK) {
                         let lat = result[0].y;
                         let lng = result[0].x;
-                        // 주소 검색 결과에서 바로 행정동(또는 법정동) 정보 가져오기
+                        // 주소 검색 결과에서 바로 행정동 정보 가져오기
                         let dongName = result[0].address ? result[0].address.region_3depth_name : "미지정"; 
                         sendData(lat, lng, currentMonth, dongName);
                     } else {
